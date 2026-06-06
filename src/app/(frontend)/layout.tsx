@@ -1,0 +1,61 @@
+import React from 'react'
+import type { Metadata, Viewport } from 'next'
+import { Inter, Saira_Condensed } from 'next/font/google'
+import './globals.css'
+import { ThemeProvider } from '@/components/theme-provider'
+import { SiteNav } from '@/components/site-nav'
+import { Toaster } from '@/components/ui/sonner'
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+})
+
+const saira = Saira_Condensed({
+  subsets: ['latin'],
+  weight: ['500', '600', '700', '800', '900'],
+  variable: '--font-saira',
+  display: 'swap',
+})
+
+const SITE_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
+
+export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: '2KDais — NBA 2K League',
+    template: '%s — 2KDais',
+  },
+  description:
+    'The home of our NBA 2K couch co-op league — live auction, trades & transfers, and tournaments.',
+  applicationName: '2KDais',
+  manifest: '/manifest.webmanifest',
+  openGraph: {
+    title: '2KDais — NBA 2K League',
+    description: 'Live auction, trades & transfers, and tournaments.',
+    images: ['/og-image.png'],
+    type: 'website',
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f4f4f5' },
+    { media: '(prefers-color-scheme: dark)', color: '#050505' },
+  ],
+}
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${saira.variable}`}>
+      <body className="min-h-screen antialiased">
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+          <SiteNav />
+          <main className="mx-auto w-full max-w-7xl px-4 pb-24 pt-6">{children}</main>
+          <Toaster position="top-center" richColors />
+        </ThemeProvider>
+      </body>
+    </html>
+  )
+}

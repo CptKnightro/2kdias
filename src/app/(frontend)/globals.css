@@ -1,0 +1,220 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* ════════════════════════════════════════════════════════════════
+   2KDais — design tokens
+   Accent: #DF2604 red · Light = white · Dark = pitch black
+   Theme: high skeuomorphism + frosted glass
+   ════════════════════════════════════════════════════════════════ */
+
+:root {
+  --radius: 0.85rem;
+
+  /* base — light mode (white) */
+  --background: #f4f4f5;
+  --foreground: #0a0a0a;
+
+  --card: #ffffff;
+  --card-foreground: #0a0a0a;
+  --popover: #ffffff;
+  --popover-foreground: #0a0a0a;
+
+  /* brand red */
+  --primary: #df2604;
+  --primary-foreground: #ffffff;
+
+  --secondary: #ececef;
+  --secondary-foreground: #18181b;
+  --muted: #ececef;
+  --muted-foreground: #6b6b72;
+  --accent: #fbe3de;
+  --accent-foreground: #df2604;
+
+  --destructive: #df2604;
+  --destructive-foreground: #ffffff;
+  --success: #16a34a;
+  --warning: #f59e0b;
+
+  --border: rgba(10, 10, 10, 0.1);
+  --input: rgba(10, 10, 10, 0.12);
+  --ring: #df2604;
+
+  /* frosted glass surfaces */
+  --glass-bg: rgba(255, 255, 255, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.7);
+  --glass-highlight: rgba(255, 255, 255, 0.9);
+  --glass-shadow: rgba(20, 20, 30, 0.18);
+
+  /* skeuomorphic depth */
+  --skeuo-top: rgba(255, 255, 255, 0.9);
+  --skeuo-bottom: rgba(0, 0, 0, 0.12);
+  --skeuo-shadow: rgba(20, 20, 30, 0.22);
+
+  --chart-1: #df2604;
+  --chart-2: #f59e0b;
+  --chart-3: #2563eb;
+  --chart-4: #16a34a;
+  --chart-5: #9333ea;
+}
+
+.dark {
+  /* base — pitch black */
+  --background: #050505;
+  --foreground: #fafafa;
+
+  --card: #101012;
+  --card-foreground: #fafafa;
+  --popover: #0c0c0e;
+  --popover-foreground: #fafafa;
+
+  --primary: #df2604;
+  --primary-foreground: #ffffff;
+
+  --secondary: #1a1a1d;
+  --secondary-foreground: #fafafa;
+  --muted: #161618;
+  --muted-foreground: #a1a1aa;
+  --accent: #2a1410;
+  --accent-foreground: #ff6a4d;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --success: #22c55e;
+  --warning: #fbbf24;
+
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: #df2604;
+
+  --glass-bg: rgba(14, 14, 18, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: rgba(255, 255, 255, 0.16);
+  --glass-shadow: rgba(0, 0, 0, 0.55);
+
+  --skeuo-top: rgba(255, 255, 255, 0.14);
+  --skeuo-bottom: rgba(0, 0, 0, 0.6);
+  --skeuo-shadow: rgba(0, 0, 0, 0.6);
+}
+
+/* ── Tailwind v4 theme mapping ─────────────────────────────────── */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-saira), var(--font-inter), sans-serif;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+  /* ambient court backdrop */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(120% 80% at 50% -10%, color-mix(in srgb, var(--primary) 14%, transparent), transparent 60%),
+      radial-gradient(90% 60% at 90% 110%, color-mix(in srgb, var(--primary) 8%, transparent), transparent 55%);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   Frosted glass + skeuomorphism utilities
+   ════════════════════════════════════════════════════════════════ */
+@layer components {
+  /* Frosted glass panel */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid var(--glass-border);
+  }
+  .glass-strong {
+    background: color-mix(in srgb, var(--glass-bg) 88%, var(--card));
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border: 1px solid var(--glass-border);
+  }
+
+  /* Skeuomorphic raised surface */
+  .skeuo {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--card) 100%, var(--skeuo-top) 40%),
+      var(--card)
+    );
+    border: 1px solid var(--border);
+  }
+
+  /* Tactile pressable button */
+  .skeuo-btn {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 88%, white), var(--primary));
+    color: var(--primary-foreground);
+    border: 1px solid color-mix(in srgb, var(--primary) 70%, black);
+    transition: transform 0.08s ease, filter 0.12s ease;
+  }
+  .skeuo-btn:hover { filter: brightness(1.06); }
+  .skeuo-btn:active {
+    transform: translateY(1px);
+  }
+
+  /* engraved / inset label */
+  .skeuo-inset {
+    background: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+}
+
+@keyframes pulse-ring {
+  0% { outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent); outline-offset: 0; }
+  70% { outline-color: transparent; outline-offset: 14px; }
+  100% { outline-color: transparent; outline-offset: 0; }
+}
+.animate-pulse-ring { animation: pulse-ring 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite; }

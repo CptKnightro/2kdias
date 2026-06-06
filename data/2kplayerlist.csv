@@ -1,0 +1,390 @@
+Rank,Player,Team,Category,Position,OVR
+1,Michael Jordan,All-Time Chicago Bulls,All-Time Legend,SG,99
+2,Magic Johnson,All-Time Los Angeles Lakers,All-Time Legend,PG,99
+3,Kobe Bryant,All-Time Los Angeles Lakers,All-Time Legend,SG,99
+4,Wilt Chamberlain,All-Time Philadelphia 76ers,All-Time Legend,C,99
+5,LeBron James,All-Time Los Angeles Lakers,All-Time Legend,SF,99
+6,Shaquille O'Neal,All-Decade 2000s,All-Decade,C,99
+7,Tim Duncan,All-Decade 2000s,All-Decade,PF,99
+8,Dirk Nowitzki,All-Decade 2000s,All-Decade,PF,99
+9,Kevin Garnett,All-Decade 2000s,All-Decade,PF,99
+10,Larry Bird,All-Decade 1980s,All-Decade,SF,99
+11,Kevin Durant,All-Time Golden State Warriors,All-Time Legend,SF,98
+12,Nikola Jokic,Denver Nuggets,Current,C,98
+13,Shai Gilgeous-Alexander,Oklahoma City Thunder,Current,PG,98
+14,Kareem Abdul-Jabbar,All-Time Los Angeles Lakers,All-Time Legend,C,97
+15,Bill Russell,All-Time Boston Celtics,All-Time Legend,C,97
+16,Oscar Robertson,All-Time Milwaukee Bucks,All-Time Legend,PG,97
+17,Jerry West,All-Time Los Angeles Lakers,All-Time Legend,PG,97
+18,Julius Erving,All-Time Philadelphia 76ers,All-Time Legend,SF,97
+19,Hakeem Olajuwon,All-Time Houston Rockets,All-Time Legend,C,97
+20,Giannis Antetokounmpo,Milwaukee Bucks,Current + All-Time,PF,97
+21,Giannis,Eastern Conference All-Stars,All-Star,PF,97
+22,Kareem,All-Decade 1970s,All-Decade,C,97
+23,Stephen Curry,All-Decade 2010s,All-Decade,PG,97
+24,Karl Malone,All-Time Utah Jazz,All-Time Legend,PF,96
+25,John Stockton,All-Time Utah Jazz,All-Time Legend,PG,96
+26,Scottie Pippen,All-Time Chicago Bulls,All-Time Legend,SF,96
+27,David Robinson,All-Time San Antonio Spurs,All-Time Legend,C,95
+28,Charles Barkley,All-Time Phoenix Suns,All-Time Legend,PF,95
+29,Tracy McGrady,All-Time Orlando Magic,All-Time Legend,SG,95
+30,Elgin Baylor,All-Time Los Angeles Lakers,All-Time Legend,SF,95
+31,Klay Thompson,All-Time Golden State Warriors,All-Time Legend,SG,95
+32,Luka Doncic,Los Angeles Lakers,Current,PG,95
+33,Anthony Edwards,Minnesota Timberwolves,Current,SG,95
+34,Allen Iverson,All-Time Philadelphia 76ers,All-Time Legend,PG,94
+35,Dwyane Wade,All-Time Miami Heat,All-Time Legend,SG,94
+36,Jayson Tatum,Boston Celtics,Current,SF,94
+37,Victor Wembanyama,San Antonio Spurs,Current,C,94
+38,Clyde Drexler,All-Time Portland Trail Blazers,All-Time Legend,SG,93
+39,Jason Kidd,All-Time New Jersey Nets,All-Time Legend,PG,93
+40,Patrick Ewing,All-Time New York Knicks,All-Time Legend,C,93
+41,Kevin McHale,All-Time Boston Celtics,All-Time Legend,PF,93
+42,Dominique Wilkins,All-Time Atlanta Hawks,All-Time Legend,SF,93
+43,James Harden,All-Decade 2010s,All-Time Legend,SG,93
+44,Donovan Mitchell,Cleveland Cavaliers,Current,SG,93
+45,Anthony Davis,Dallas Mavericks,Current,PF,93
+46,Jalen Brunson,New York Knicks,Current,PG,93
+47,Tyrese Halliburton,Indiana Pacers,Current,PG,93
+48,Rick Barry,All-Time Golden State Warriors,All-Time Legend,SF,93
+49,Tyrese Haliburton,Eastern Conference All-Stars,All-Star,PG,93
+50,Moses Malone,All-Decade 1980s,All-Decade,C,93
+51,Gary Payton,All-Time Seattle SuperSonics,All-Time Legend,PG,92
+52,Vince Carter,All-Time Toronto Raptors,All-Time Legend,SG,92
+53,Pete Maravich,All-Time New Orleans Jazz,All-Time Legend,PG,92
+54,Carmelo Anthony,All-Time Denver Nuggets,All-Time Legend,SF,92
+55,Chris Paul,All-Time Los Angeles Clippers,All-Time Legend,PG,92
+56,Russell Westbrook,All-Time Oklahoma City Thunder,All-Time Legend,PG,92
+57,Kawhi Leonard,Los Angeles Clippers,Current,SF,92
+58,Cade Cunningham,Detroit Pistons,Current,PG,92
+59,Joel Embiid,Philadelphia 76ers,Current,C,92
+60,Karl Anthony-Towns,New York Knicks,Current,C,92
+61,Steve Nash,All-Decade 2000s,All-Decade,PG,92
+62,John Havlicek,All-Time Boston Celtics,All-Time Legend,SF,91
+63,Isiah Thomas,All-Time Detroit Pistons,All-Time Legend,PG,91
+64,Reggie Miller,All-Time Indiana Pacers,All-Time Legend,SG,91
+65,Chris Webber,All-Time Sacramento Kings,All-Time Legend,PF,91
+66,Ja Morant,Memphis Grizzlies,Current,PG,91
+67,Devin Booker,Phoenix Suns,Current,SG,91
+68,De'Aaron Fox,San Antonio Spurs,Current,PG,91
+69,Penny Hardaway,All-Decade 1990s,All-Decade,PG,91
+70,Jalen Williams,Oklahoma City Thunder,Current,SG,90
+71,Jaylen Brown,Boston Celtics,Current,SG,90
+72,Trae Young,Atlanta Hawks,Current,PG,90
+73,Kyrie Irving,Dallas Mavericks,Current,PG,90
+74,Alonzo Mourning,All-Time Miami Heat,All-Time Legend,C,90
+75,Ray Allen,All-Time Boston Celtics,All-Time Legend,SG,90
+76,James Worthy,All-Time Los Angeles Lakers,All-Time Legend,SF,90
+77,Pau Gasol,All-Time Los Angeles Lakers,All-Time Legend,C,90
+78,Elvin Hayes,All-Time Washington Bullets,All-Time Legend,PF,90
+79,David Thompson,All-Time Denver Nuggets,All-Time Legend,SF,90
+80,Nate Thurmond,All-Time Golden State Warriors,All-Time Legend,C,90
+81,Wes Unseld,All-Time Washington Bullets,All-Time Legend,C,90
+82,Bob Lanier,All-Time Detroit Pistons,All-Time Legend,C,90
+83,Walt Frazier,All-Time New York Knicks,All-Time Legend,PG,89
+84,Manu Ginobili,All-Time San Antonio Spurs,All-Time Legend,SG,89
+85,Shawn Kemp,All-Time Seattle SuperSonics,All-Time Legend,PF,89
+86,Arvydas Sabonis,All-Time Portland Trail Blazers,All-Time Legend,C,89
+87,Paul Pierce,All-Time Boston Celtics,All-Time Legend,SF,89
+88,Derrick Rose,All-Time Chicago Bulls,All-Time Legend,PG,89
+89,Amar'e Stoudemire,All-Time Phoenix Suns,All-Time Legend,PF,89
+90,Paolo Banchero,Orlando Magic,Current,PF,89
+91,Evan Mobley,Cleveland Cavaliers,Current,PF,89
+92,Pascal Siakam,Indiana Pacers,Current,PF,89
+93,Jaren Jackson Jr.,Memphis Grizzlies,Current,PF,89
+94,Bob Pettit,All-Time St. Louis Hawks,All-Time Legend,PF,88
+95,Bob Cousy,All-Time Boston Celtics,All-Time Legend,PG,88
+96,Joe Dumars,All-Time Detroit Pistons,All-Time Legend,SG,88
+97,Tim Hardaway Sr.,All-Time Miami Heat,All-Time Legend,PG,88
+98,Rasheed Wallace,All-Time Portland Trail Blazers,All-Time Legend,PF,88
+99,Peja Stojakovic,All-Time Sacramento Kings,All-Time Legend,SF,88
+100,Dikembe Mutombo,All-Time Denver Nuggets,All-Time Legend,C,88
+101,Tony Parker,All-Time San Antonio Spurs,All-Time Legend,PG,88
+102,Chauncey Billups,All-Time Detroit Pistons,All-Time Legend,PG,88
+103,Adrian Dantley,All-Time Utah Jazz,All-Time Legend,SF,88
+104,Kevin Johnson,All-Time Phoenix Suns,All-Time Legend,PG,88
+105,Baron Davis,All-Time Golden State Warriors,All-Time Legend,PG,88
+106,Stephon Marbury,All-Time New York Knicks,All-Time Legend,PG,88
+107,Bam Adebayo,Miami Heat,Current,C,88
+108,Chet Holmgren,Oklahoma City Thunder,Current,C,88
+109,Damian Lillard,Portland Trail Blazers,Current,PG,88
+110,Dan Issel,All-Time Denver Nuggets,All-Time Legend,C,88
+111,Bill Walton,All-Time Portland Trail Blazers,All-Time Legend,C,88
+112,Connie Hawkins,All-Time Phoenix Suns,All-Time Legend,SF,88
+113,Draymond Green,All-Decade 2010s,All-Decade,PF,88
+114,Alperen Sengun,Houston Rockets,Current,C,87
+115,Domantas Sabonis,Sacramento Kings,Current,C,87
+116,LaMelo Ball,Charlotte Hornets,Current,PG,87
+117,Darius Garland,Cleveland Cavaliers,Current,SG,87
+118,Zion Williamson,New Orleans Pelicans,Current,PF,87
+119,Ivica Zubac,Los Angeles Clippers,Current,C,87
+120,Derrick White,Boston Celtics,Current,SG,87
+121,Jimmy Butler,Golden State Warriors,Current,SF,87
+122,Amen Thompson,Houston Rockets,Current,SF,87
+123,Dave Cowens,All-Time Boston Celtics,All-Time Legend,C,87
+124,Sam Cassell,All-Time Boston Celtics,All-Time Legend,PG,87
+125,Bob McAdoo,All-Time Buffalo Braves,All-Time Legend,C,87
+126,Alex English,All-Time Denver Nuggets,All-Time Legend,SF,87
+127,Mitch Richmond,All-Time Sacramento Kings,All-Time Legend,SG,87
+128,Gilbert Arenas,All-Time Washington Wizards,All-Time Legend,PG,87
+129,Nate Archibald,All-Time Kansas City Kings,All-Time Legend,PG,87
+130,Lamar Odom,All-Time Los Angeles Lakers,All-Time Legend,SF,87
+131,Paul Westphal,All-Time Phoenix Suns,All-Time Legend,PG,87
+132,Larry Johnson,All-Time Charlotte Hornets,All-Time Legend,PF,87
+133,Tyler Herro,Miami Heat,Current,SG,86
+134,Tyrese Maxey,Philadelphia 76ers,Current,PG,86
+135,Jamal Murray,Denver Nuggets,Current,PG,86
+136,Franz Wagner,Orlando Magic,Current,SF,86
+137,Julius Randle,Minnesota Timberwolves,Current,PF,86
+138,Jerry Lucas,All-Time New York Knicks,All-Time Legend,PF,86
+139,Willis Reed,All-Time New York Knicks,All-Time Legend,C,86
+140,Spencer Haywood,All-Time Seattle SuperSonics,All-Time Legend,PF,86
+141,Tom Chambers,All-Time Phoenix Suns,All-Time Legend,PF,86
+142,Mark Aguirre,All-Time Dallas Mavericks,All-Time Legend,SF,86
+143,Andrew Bynum,All-Time Los Angeles Lakers,All-Time Legend,C,86
+144,Toni Kukoc,All-Time Chicago Bulls,All-Time Legend,SF,86
+145,Vin Baker,All-Time Milwaukee Bucks,All-Time Legend,PF,86
+146,Glenn Robinson,All-Time Milwaukee Bucks,All-Time Legend,SF,86
+147,Maurice Cheeks,All-Time Philadelphia 76ers,All-Time Legend,PG,86
+148,Jack Sikma,All-Time Seattle SuperSonics,All-Time Legend,C,86
+149,Dave DeBusschere,All-Time New York Knicks,All-Time Legend,PF,86
+150,Gail Goodrich,All-Time Los Angeles Lakers,All-Time Legend,PG,86
+151,Jo Jo White,All-Time Boston Celtics,All-Time Legend,PG,86
+152,Carlos Boozer,All-Time Utah Jazz,All-Time Legend,PF,86
+153,Lou Hudson,All-Time Atlanta Hawks,All-Time Legend,SG,86
+154,Hal Greer,All-Time Philadelphia 76ers,All-Time Legend,SG,86
+155,Zach LaVine,Sacramento Kings,Current,SG,85
+156,Austin Reaves,Los Angeles Lakers,Current,SG,85
+157,DeMar DeRozan,Sacramento Kings,Current,SF,85
+158,Scottie Barnes,Toronto Raptors,Current,SF,85
+159,OG Anunoby,New York Knicks,Current,SF,85
+160,Kristaps Porzingis,Atlanta Hawks,Current,C,85
+161,Sam Jones,All-Time Boston Celtics,All-Time Legend,SG,85
+162,Dennis Johnson,All-Time Boston Celtics,All-Time Legend,SG,85
+163,Walter Davis,All-Time Phoenix Suns,All-Time Legend,SG,85
+164,Latrell Sprewell,All-Time New York Knicks,All-Time Legend,SF,85
+165,Steve Smith,All-Time Atlanta Hawks,All-Time Legend,SG,85
+166,Detlef Schrempf,All-Time Seattle SuperSonics,All-Time Legend,SF,85
+167,Glen Rice,All-Time Miami Heat,All-Time Legend,SF,85
+168,Mark Price,All-Time Cleveland Cavaliers,All-Time Legend,PG,85
+169,Dennis Rodman,All-Time Chicago Bulls,All-Time Legend,PF,85
+170,Rajon Rondo,All-Time Boston Celtics,All-Time Legend,PG,85
+171,Joakim Noah,All-Time Chicago Bulls,All-Time Legend,C,85
+172,Rolando Blackman,All-Time Dallas Mavericks,All-Time Legend,SG,85
+173,Len Wilkens,All-Time St. Louis Hawks,All-Time Legend,PG,85
+174,Lauri Markkanen,Utah Jazz,Current,PF,84
+175,Brandon Ingram,Toronto Raptors,Current,SF,84
+176,Mikal Bridges,New York Knicks,Current,SF,84
+177,Rudy Gobert,Minnesota Timberwolves,Current,C,84
+178,Norman Powell,Miami Heat,Current,SG,84
+179,Jarrett Allen,Cleveland Cavaliers,Current,C,84
+180,Bill Laimbeer,All-Time Detroit Pistons,All-Time Legend,C,84
+181,Fat Lever,All-Time Denver Nuggets,All-Time Legend,PG,84
+182,Vlade Divac,All-Time Sacramento Kings,All-Time Legend,C,84
+183,Dale Ellis,All-Time Seattle SuperSonics,All-Time Legend,SG,84
+184,Brad Daugherty,All-Time Cleveland Cavaliers,All-Time Legend,C,84
+185,Antawn Jamison,All-Time Washington Wizards,All-Time Legend,PF,84
+186,Ron Artest,All-Time Indiana Pacers,All-Time Legend,SF,84
+187,Caron Butler,All-Time Washington Wizards,All-Time Legend,SF,84
+188,Robert Williams,Boston Celtics,Current,C,84
+189,Marcus Smart,Memphis Grizzlies,Current,PG,84
+190,Jordan Poole,Washington Wizards,Current,SG,84
+191,Victor Oladipo,All-Time Indiana Pacers,All-Time Legend,SG,84
+192,Gus Williams,All-Time Seattle SuperSonics,All-Time Legend,PG,84
+193,Bob Love,All-Time Chicago Bulls,All-Time Legend,SF,84
+194,Tom Heinsohn,All-Time Boston Celtics,All-Time Legend,SF,84
+195,Zydrunas Ilgauskas,All-Time Cleveland Cavaliers,All-Time Legend,C,84
+196,Jamaal Wilkes,All-Time Los Angeles Lakers,All-Time Legend,SF,84
+197,Cliff Hagan,All-Time St. Louis Hawks,All-Time Legend,SF,84
+198,Dave Bing,All-Decade 1960s,All-Decade,PG,84
+199,Desmond Bane,Orlando Magic,Current,SG,83
+200,Jalen Green,Phoenix Suns,Current,SG,83
+201,Myles Turner,Milwaukee Bucks,Current,C,83
+202,Cameron Johnson,Denver Nuggets,Current,SF,83
+203,Dyson Daniels,Atlanta Hawks,Current,SG,83
+204,Coby White,Chicago Bulls,Current,PG,83
+205,Dan Majerle,All-Time Phoenix Suns,All-Time Legend,SG,83
+206,Mike Bibby,All-Time Sacramento Kings,All-Time Legend,PG,83
+207,Brad Miller,All-Time Sacramento Kings,All-Time Legend,C,83
+208,Byron Scott,All-Time Los Angeles Lakers,All-Time Legend,SG,83
+209,Xavier McDaniel,All-Time Seattle SuperSonics,All-Time Legend,SF,83
+210,Hedo Turkoglu,All-Time Orlando Magic,All-Time Legend,SF,83
+211,Terrell Brandon,All-Time Cleveland Cavaliers,All-Time Legend,PG,83
+212,Wally Szczerbiak,All-Time Minnesota Timberwolves,All-Time Legend,SF,83
+213,Michael Ray Richardson,All-Time New Jersey Nets,All-Time Legend,PG,83
+214,Andrew Toney,All-Time Philadelphia 76ers,All-Time Legend,SG,83
+215,Mookie Blaylock,All-Time Atlanta Hawks,All-Time Legend,PG,83
+216,Alvin Robertson,All-Time San Antonio Spurs,All-Time Legend,SG,83
+217,Jerry Sloan,All-Time Chicago Bulls,All-Time Legend,SG,83
+218,Chet Walker,All-Time Chicago Bulls,All-Time Legend,SF,83
+219,Gus Johnson,All-Time Washington Bullets,All-Time Legend,PF,83
+220,Luol Deng,All-Time Chicago Bulls,All-Time Legend,SF,83
+221,Ben Gordon,All-Time Chicago Bulls,All-Time Legend,SG,83
+222,Derek Harper,All-Time Dallas Mavericks,All-Time Legend,PG,83
+223,Norm Nixon,All-Time Los Angeles Lakers,All-Time Legend,PG,82
+224,Jason Williams,All-Time Sacramento Kings,All-Time Legend,PG,82
+225,Cliff Robinson,All-Time Portland Trail Blazers,All-Time Legend,SF,82
+226,Larry Nance Sr.,All-Time Cleveland Cavaliers,All-Time Legend,PF,82
+227,Vinnie Johnson,All-Time Detroit Pistons,All-Time Legend,SG,82
+228,Damon Stoudamire,All-Time Portland Trail Blazers,All-Time Legend,PG,82
+229,Stephon Castle,San Antonio Spurs,Current,PG,82
+230,Michael Porter Jr.,Brooklyn Nets,Current,SF,82
+231,RJ Barrett,Toronto Raptors,Current,SG,82
+232,Josh Giddey,Chicago Bulls,Current,PG,82
+233,John Collins,Los Angeles Clippers,Current,PF,82
+234,Aaron Gordon,Denver Nuggets,Current,PF,82
+235,Brandon Miller,Charlotte Hornets,Current,SG,82
+236,Deni Avdija,Portland Trail Blazers,Current,SF,82
+237,Naz Reid,Minnesota Timberwolves,Current,C,82
+238,Nikola Vucevic,Chicago Bulls,Current,C,82
+239,Jalen Duren,Detroit Pistons,Current,C,82
+240,Jalen Suggs,Orlando Magic,Current,PG,82
+241,Trey Murphy III,New Orleans Pelicans,Current,SF,82
+242,Cooper Flagg,Dallas Mavericks,Current,SF,82
+243,Isaiah Hartenstein,Oklahoma City Thunder,Current,C,82
+244,Jaden McDaniels,Minnesota Timberwolves,Current,SF,82
+245,Toumani Camara,Portland Trail Blazers,Current,SF,82
+246,Walker Kessler,Utah Jazz,Current,C,82
+247,Darryl Dawkins,All-Time Philadelphia 76ers,All-Time Legend,C,82
+248,Doc Rivers,All-Time Atlanta Hawks,All-Time Legend,PG,82
+249,Mike Mitchell,All-Time San Antonio Spurs,All-Time Legend,SF,82
+250,Geoff Petrie,All-Time Portland Trail Blazers,All-Time Legend,SG,82
+251,Sidney Wicks,All-Time Portland Trail Blazers,All-Time Legend,SF,82
+252,Don Nelson,All-Time Boston Celtics,All-Time Legend,SF,82
+253,Dick Van Arsdale,All-Time Phoenix Suns,All-Time Legend,SG,82
+254,Van Arsdale,All-Time Phoenix Suns,All-Time Legend,SG,82
+255,Kirk Hinrich,All-Time Chicago Bulls,All-Time Legend,PG,82
+256,Sam Perkins,All-Time Dallas Mavericks,All-Time Legend,PF,82
+257,Dell Curry,All-Time Charlotte Hornets,All-Time Legend,SG,82
+258,Tom Gola,All-Time Philadelphia 76ers,All-Time Legend,PG,82
+259,Lu Dort,Oklahoma City Thunder,Current,SG,81
+260,Herb Jones,New Orleans Pelicans,Current,SF,81
+261,Jrue Holiday,Portland Trail Blazers,Current,SG,81
+262,Dejounte Murray,New Orleans Pelicans,Current,PG,81
+263,CJ McCollum,Washington Wizards,Current,SG,81
+264,Anfernee Simons,Boston Celtics,Current,SG,81
+265,Josh Hart,New York Knicks,Current,SF,81
+266,Paul George,Philadelphia 76ers,Current,SF,81
+267,Onyeka Okongwu,Atlanta Hawks,Current,C,81
+268,Immanuel Quickley,Toronto Raptors,Current,PG,81
+269,Andrew Nembhard,Indiana Pacers,Current,PG,81
+270,Jalen Johnson,Atlanta Hawks,Current,SF,81
+271,Alex Sarr,Washington Wizards,Current,C,81
+272,Aaron Nesmith,Indiana Pacers,Current,SF,81
+273,Shaedon Sharpe,Portland Trail Blazers,Current,SG,81
+274,Bobby Portis Jr.,Milwaukee Bucks,Current,PF,81
+275,Taj Gibson,All-Time Chicago Bulls,All-Time Legend,PF,81
+276,Horace Grant,All-Time Chicago Bulls,All-Time Legend,PF,80
+277,Robert Horry,All-Time San Antonio Spurs,All-Time Legend,PF,80
+278,Bruce Bowen,All-Time San Antonio Spurs,All-Time Legend,SF,80
+279,Derek Fisher,All-Time Los Angeles Lakers,All-Time Legend,PG,80
+280,John Paxson,All-Time Chicago Bulls,All-Time Legend,PG,80
+281,AC Green,All-Time Los Angeles Lakers,All-Time Legend,PF,80
+282,Michael Cooper,All-Time Los Angeles Lakers,All-Time Legend,SG,80
+283,John Salley,All-Time Detroit Pistons,All-Time Legend,PF,80
+284,James Edwards,All-Time Detroit Pistons,All-Time Legend,C,80
+285,Khris Middleton,Milwaukee Bucks,Current,SF,80
+286,Fred VanVleet,Houston Rockets,Current,PG,80
+287,Brook Lopez,Milwaukee Bucks,Current,C,80
+288,Jonas Valanciunas,New Orleans Pelicans,Current,C,80
+289,Grayson Allen,Phoenix Suns,Current,SG,80
+290,Kyle Lowry,Philadelphia 76ers,Current,PG,80
+291,Harrison Barnes,Sacramento Kings,Current,SF,80
+292,Jerami Grant,Portland Trail Blazers,Current,PF,80
+293,Al Horford,Boston Celtics,Current,C,80
+294,Bobby Jones,All-Time Philadelphia 76ers,All-Time Legend,SF,80
+295,Stacey Augmon,All-Time Atlanta Hawks,All-Time Legend,SF,80
+296,Fred Brown,All-Time Seattle SuperSonics,All-Time Legend,SG,80
+297,Bob Boozer,All-Time Chicago Bulls,All-Time Legend,PF,80
+298,Jeff Mullins,All-Time Golden State Warriors,All-Time Legend,SG,80
+299,Cazzie Russell,All-Time New York Knicks,All-Time Legend,SG,80
+300,Bill Bradley,All-Time New York Knicks,All-Time Legend,SF,80
+301,Happy Hairston,All-Time Los Angeles Lakers,All-Time Legend,PF,80
+302,Jim McMillian,All-Time Los Angeles Lakers,All-Time Legend,SF,80
+303,Frank Ramsey,All-Time Boston Celtics,All-Time Legend,SG,80
+304,Paul Silas,All-Time Boston Celtics,All-Time Legend,PF,80
+305,Clem Haskins,All-Time Phoenix Suns,All-Time Legend,PG,80
+306,Kevin Porter,All-Time Detroit Pistons,All-Time Legend,PG,80
+307,Nate Robinson,All-Time Chicago Bulls,All-Time Legend,PG,80
+308,Ricky Davis,All-Time Cleveland Cavaliers,All-Time Legend,SG,80
+309,Matt Harpring,All-Time Utah Jazz,All-Time Legend,SF,80
+310,Tom Van Arsdale,All-Time Cincinnati Royals,All-Time Legend,SF,80
+311,Wayne Embry,All-Time Cincinnati Royals,All-Time Legend,C,80
+312,Pat Connaughton,Milwaukee Bucks,Current,SG,79
+313,Matisse Thybulle,Portland Trail Blazers,Current,SG,79
+314,Dillon Brooks,Houston Rockets,Current,SF,79
+315,Mark Williams,Charlotte Hornets,Current,C,79
+316,Bismack Biyombo,Phoenix Suns,Current,C,79
+317,Torrey Craig,Phoenix Suns,Current,SF,79
+318,Herbert Jones,New Orleans Pelicans,Current,SF,79
+319,Mike Conley,Utah Jazz,Current,PG,79
+320,Spencer Dinwiddie,Dallas Mavericks,Current,PG,79
+321,De'Andre Hunter,Atlanta Hawks,Current,SF,79
+322,Kyle Kuzma,Washington Wizards,Current,PF,79
+323,Jabari Smith Jr.,Houston Rockets,Current,PF,79
+324,Josh Green,New Orleans Pelicans,Current,SG,79
+325,Jay Vincent,All-Time Dallas Mavericks,All-Time Legend,SF,79
+326,Cameron Payne,Milwaukee Bucks,Current,PG,78
+327,TJ McConnell,Indiana Pacers,Current,PG,78
+328,Obi Toppin,Indiana Pacers,Current,PF,78
+329,Keyonte George,Utah Jazz,Current,PG,78
+330,Jordan Clarkson,Utah Jazz,Current,SG,78
+331,Royce O'Neale,Phoenix Suns,Current,SF,78
+332,Luc Longley,All-Time Chicago Bulls,All-Time Legend,C,78
+333,Joe Ingles,Minnesota Timberwolves,Current,SF,78
+334,Duncan Robinson,Miami Heat,Current,SG,78
+335,Caleb Martin,Miami Heat,Current,SF,78
+336,Gary Trent Jr.,Milwaukee Bucks,Current,SG,78
+337,Precious Achiuwa,New York Knicks,Current,PF,78
+338,Keegan Murray,Sacramento Kings,Current,SF,78
+339,Malik Monk,Sacramento Kings,Current,SG,78
+340,Nic Claxton,Brooklyn Nets,Current,C,78
+341,Cam Thomas,Brooklyn Nets,Current,SG,78
+342,Dennis Schroder,Brooklyn Nets,Current,PG,78
+343,Ben Simmons,Brooklyn Nets,Current,PF,78
+344,Danny Green,All-Time San Antonio Spurs,All-Time Legend,SG,78
+345,Muggsy Bogues,All-Time Charlotte Hornets,All-Time Legend,PG,78
+346,Spud Webb,All-Time Atlanta Hawks,All-Time Legend,PG,78
+347,Kurt Rambis,All-Time Los Angeles Lakers,All-Time Legend,PF,78
+348,Johnny Moore,All-Time San Antonio Spurs,All-Time Legend,PG,78
+349,Tom Boerwinkle,All-Time Chicago Bulls,All-Time Legend,C,78
+350,Al Attles,All-Time Golden State Warriors,All-Time Legend,PG,78
+351,Jon McGlocklin,All-Time Milwaukee Bucks,All-Time Legend,SG,78
+352,Brad Davis,All-Time Dallas Mavericks,All-Time Legend,PG,78
+353,Brevin Knight,All-Time Charlotte Hornets,All-Time Legend,PG,78
+354,Raja Bell,All-Time Utah Jazz,All-Time Legend,SG,78
+355,BJ Armstrong,All-Time Chicago Bulls,All-Time Legend,PG,77
+356,Caris LeVert,Cleveland Cavaliers,Current,SG,77
+357,Landry Shamet,Washington Wizards,Current,SG,77
+358,Wendell Carter Jr.,Orlando Magic,Current,C,77
+359,Cole Anthony,Orlando Magic,Current,PG,77
+360,Chris Boucher,Toronto Raptors,Current,PF,77
+361,Thaddeus Young,San Antonio Spurs,Current,PF,77
+362,Keldon Johnson,San Antonio Spurs,Current,SF,77
+363,Tre Jones,San Antonio Spurs,Current,PG,77
+364,Isaiah Joe,Oklahoma City Thunder,Current,SG,77
+365,Cason Wallace,Oklahoma City Thunder,Current,SG,77
+366,Ousmane Dieng,Oklahoma City Thunder,Current,SF,77
+367,Gradey Dick,Toronto Raptors,Current,SG,77
+368,Sam Merrill,Cleveland Cavaliers,Current,SG,77
+369,Georges Niang,Cleveland Cavaliers,Current,PF,77
+370,Dean Wade,Cleveland Cavaliers,Current,PF,76
+371,VJ Edgecombe,Philadelphia 76ers,Current,SG,76
+372,Kyle Filipowski,Utah Jazz,Current,C,76
+373,Nick Richards,Phoenix Suns,Current,C,76
+374,Earl Boykins,All-Time Denver Nuggets,All-Time Legend,PG,76
+375,Jerry Chambers,All-Time Los Angeles Lakers,All-Time Legend,SF,76
+376,Bo Outlaw,All-Time Utah Jazz,All-Time Legend,PF,76
+377,Luke Jackson,All-Time Philadelphia 76ers,All-Time Legend,SF,76
+378,Jalen Hood-Schifino,Los Angeles Lakers,Current,PG,75
+379,Maxwell Lewis,Los Angeles Lakers,Current,SF,75
+380,Ryan Dunn,Phoenix Suns,Current,SF,75
+381,Gabe Vincent,Los Angeles Lakers,Current,PG,74
+382,Jake LaRavia,Los Angeles Lakers,Current,SF,74
+383,Craig Porter Jr.,Cleveland Cavaliers,Current,PG,74
+384,Khaman Maluach,Phoenix Suns,Current,C,74
+385,Shawn Bradley,All-Time Dallas Mavericks,All-Time Legend,C,74
+386,Maxi Kleber,Los Angeles Lakers,Current,PF,73
+387,Nate Marshall,Cleveland Cavaliers,Current,SG,73
+388,Jordan Goodwin,Phoenix Suns,Current,PG,73
+389,Manute Bol,All-Time Washington Bullets,All-Time Legend,C,72
