@@ -18,7 +18,7 @@ export default async function LoginPage({
   if (user?.role === 'commissioner') redirect(safeNext)
 
   return (
-    <div className="grid min-h-[calc(100vh-9rem)] place-items-center py-8">
+    <div className="grid min-h-[calc(100svh-7rem)] place-items-center">
       <LoginForm next={safeNext} />
     </div>
   )

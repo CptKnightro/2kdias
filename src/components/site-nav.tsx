@@ -34,6 +34,9 @@ export function SiteNav() {
   const pathname = usePathname()
   const [open, setOpen] = React.useState(false)
 
+  // The login page is a standalone screen — no league nav.
+  if (pathname === '/login') return null
+
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
 
