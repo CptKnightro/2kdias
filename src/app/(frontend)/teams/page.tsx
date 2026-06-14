@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import { Users as UsersIcon, IdentificationCard, CurrencyCircleDollar } from '@phosphor-icons/react/dist/ssr'
 import { safeQuery, mediaUrl } from '@/lib/payload'
-import { PageHeader, SetupBanner, EmptyState } from '@/components/ui-bits'
+import { PageHeader, EmptyState } from '@/components/ui-bits'
+import { DbErrorToast } from '@/components/db-error-toast'
+import { PageSkeleton } from '@/components/skeletons'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600 // cached; purged on-demand via Payload hooks (src/lib/revalidate.ts)
 export const metadata = { title: 'Teams' }
 
 export default async function TeamsPage() {
@@ -46,10 +48,18 @@ export default async function TeamsPage() {
     { teams: [], sym: '$', suf: 'M' },
   )
 
+  if (!dbReady) {
+    return (
+      <>
+        <DbErrorToast />
+        <PageSkeleton />
+      </>
+    )
+  }
+
   return (
     <div>
       <PageHeader title="Franchises" icon={UsersIcon} subtitle="The teams of the league" />
-      {!dbReady && <SetupBanner />}
       {data.teams.length > 0 ? (
         <ul className="divide-y divide-border border-y border-border">
           {data.teams.map((t) => (
@@ -91,18 +101,16 @@ export default async function TeamsPage() {
           ))}
         </ul>
       ) : (
-        dbReady && (
-          <EmptyState
-            icon={UsersIcon}
-            title="No franchises yet"
-            description="Create franchises in the commissioner panel and assign each friend as an owner."
-            cta={
-              <Link href="/admin/collections/franchises/create" className="skeuo-btn rounded-lg px-4 py-2 font-semibold">
-                Create Franchise
-              </Link>
-            }
-          />
-        )
+        <EmptyState
+          icon={UsersIcon}
+          title="No franchises yet"
+          description="Create franchises in the commissioner panel and assign each friend as an owner."
+          cta={
+            <Link href="/admin/collections/franchises/create" className="skeuo-btn rounded-lg px-4 py-2 font-semibold">
+              Create Franchise
+            </Link>
+          }
+        />
       )}
     </div>
   )

@@ -1,8 +1,10 @@
 import { Medal, Trophy } from '@phosphor-icons/react/dist/ssr'
 import { safeQuery } from '@/lib/payload'
-import { PageHeader, SetupBanner, EmptyState, GlassPanel } from '@/components/ui-bits'
+import { PageHeader, EmptyState, GlassPanel } from '@/components/ui-bits'
+import { DbErrorToast } from '@/components/db-error-toast'
+import { PageSkeleton } from '@/components/skeletons'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600 // cached; purged on-demand via Payload hooks (src/lib/revalidate.ts)
 export const metadata = { title: 'Records & Hall of Fame' }
 
 export default async function RecordsPage() {
@@ -42,12 +44,20 @@ export default async function RecordsPage() {
     { awards: [], champions: [] as { id: string; name: string; season: string | null; champion: string }[] },
   )
 
+  if (!dbReady) {
+    return (
+      <>
+        <DbErrorToast />
+        <PageSkeleton />
+      </>
+    )
+  }
+
   const empty = data.awards.length === 0 && data.champions.length === 0
 
   return (
     <div>
       <PageHeader title="Hall of Fame" icon={Medal} subtitle="Champions, awards & records" />
-      {!dbReady && <SetupBanner />}
 
       {!empty ? (
         <div className="grid gap-6 lg:grid-cols-2">
@@ -107,13 +117,11 @@ export default async function RecordsPage() {
           </section>
         </div>
       ) : (
-        dbReady && (
-          <EmptyState
-            icon={Medal}
-            title="The trophy cabinet is empty"
-            description="As you complete tournaments and hand out awards, they'll be immortalised here."
-          />
-        )
+        <EmptyState
+          icon={Medal}
+          title="The trophy cabinet is empty"
+          description="As you complete tournaments and hand out awards, they'll be immortalised here."
+        />
       )}
     </div>
   )

@@ -7,7 +7,7 @@ const PURSE_TOTAL = 600
 // owner display name, login email, team name
 const TEAMS = [
   { owner: 'Mandy', email: 'mandy@2kdais.local', team: 'Raptors', color: '#CE1141' },
-  { owner: 'Staines', email: 'staines@2kdais.local', team: 'Nets', color: '#000000' },
+  { owner: 'Staines', email: 'staines@2kdais.local', team: 'Nets', color: '#FFFFFF' },
   { owner: 'Omar', email: 'omar@2kdais.local', team: 'Thunders', color: '#007AC1' },
   { owner: 'AJ', email: 'aj@2kdais.local', team: 'Heat', color: '#98002E' },
   { owner: 'Lash', email: 'lash@2kdais.local', team: 'Lakers', color: '#552583' },

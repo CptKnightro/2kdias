@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import { ArrowsLeftRight, ArrowRight } from '@phosphor-icons/react/dist/ssr'
 import { safeQuery } from '@/lib/payload'
-import { PageHeader, SetupBanner, EmptyState, GlassPanel } from '@/components/ui-bits'
+import { PageHeader, EmptyState, GlassPanel } from '@/components/ui-bits'
+import { DbErrorToast } from '@/components/db-error-toast'
+import { PageSkeleton } from '@/components/skeletons'
 import { cn } from '@/lib/utils'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600 // cached; purged on-demand via Payload hooks (src/lib/revalidate.ts)
 export const metadata = { title: 'Trade Center' }
 
 const STATUS_STYLE: Record<string, string> = {
@@ -49,6 +51,15 @@ export default async function TradesPage() {
     }[],
   )
 
+  if (!dbReady) {
+    return (
+      <>
+        <DbErrorToast />
+        <PageSkeleton />
+      </>
+    )
+  }
+
   return (
     <div>
       <PageHeader
@@ -61,7 +72,6 @@ export default async function TradesPage() {
           </Link>
         }
       />
-      {!dbReady && <SetupBanner />}
       {data.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2">
           {data.map((t) => (
@@ -99,18 +109,16 @@ export default async function TradesPage() {
           ))}
         </div>
       ) : (
-        dbReady && (
-          <EmptyState
-            icon={ArrowsLeftRight}
-            title="No trades yet"
-            description="Propose a trade to another franchise — offer players and cash, then they accept, counter, or reject."
-            cta={
-              <Link href="/admin/collections/trades/create" className="skeuo-btn rounded-lg px-4 py-2 font-semibold">
-                Propose a Trade
-              </Link>
-            }
-          />
-        )
+        <EmptyState
+          icon={ArrowsLeftRight}
+          title="No trades yet"
+          description="Propose a trade to another franchise — offer players and cash, then they accept, counter, or reject."
+          cta={
+            <Link href="/admin/collections/trades/create" className="skeuo-btn rounded-lg px-4 py-2 font-semibold">
+              Propose a Trade
+            </Link>
+          }
+        />
       )}
     </div>
   )

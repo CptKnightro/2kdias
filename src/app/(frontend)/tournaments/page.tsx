@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import { Trophy, CaretRight } from '@phosphor-icons/react/dist/ssr'
 import { safeQuery } from '@/lib/payload'
-import { PageHeader, SetupBanner, EmptyState, GlassPanel } from '@/components/ui-bits'
+import { PageHeader, EmptyState, GlassPanel } from '@/components/ui-bits'
+import { DbErrorToast } from '@/components/db-error-toast'
+import { PageSkeleton } from '@/components/skeletons'
 import { cn } from '@/lib/utils'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600 // cached; purged on-demand via Payload hooks (src/lib/revalidate.ts)
 export const metadata = { title: 'Tournaments' }
 
 const FORMAT_LABEL: Record<string, string> = {
@@ -40,6 +42,15 @@ export default async function TournamentsPage() {
     }[],
   )
 
+  if (!dbReady) {
+    return (
+      <>
+        <DbErrorToast />
+        <PageSkeleton />
+      </>
+    )
+  }
+
   return (
     <div>
       <PageHeader
@@ -52,7 +63,6 @@ export default async function TournamentsPage() {
           </Link>
         }
       />
-      {!dbReady && <SetupBanner />}
       {data.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {data.map((t) => (
@@ -86,18 +96,16 @@ export default async function TournamentsPage() {
           ))}
         </div>
       ) : (
-        dbReady && (
-          <EmptyState
-            icon={Trophy}
-            title="No tournaments yet"
-            description="Spin up a tournament — round robin, knockout, or a full season league — then add fixtures."
-            cta={
-              <Link href="/admin/collections/tournaments/create" className="skeuo-btn rounded-lg px-4 py-2 font-semibold">
-                Create Tournament
-              </Link>
-            }
-          />
-        )
+        <EmptyState
+          icon={Trophy}
+          title="No tournaments yet"
+          description="Spin up a tournament — round robin, knockout, or a full season league — then add fixtures."
+          cta={
+            <Link href="/admin/collections/tournaments/create" className="skeuo-btn rounded-lg px-4 py-2 font-semibold">
+              Create Tournament
+            </Link>
+          }
+        />
       )}
     </div>
   )

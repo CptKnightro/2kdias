@@ -6,8 +6,9 @@ export const getPayloadClient = async () => getPayload({ config: await config })
 
 /**
  * Run a Payload query, returning a fallback (and dbReady:false) if the database
- * isn't reachable yet — lets the UI render a "connect your database" state
- * before Supabase env is configured rather than throwing a 500.
+ * isn't reachable — never throws, so static generation can't fail at build. On
+ * dbReady:false pages render a <PageSkeleton /> body + fire a <DbErrorToast />
+ * popup rather than a 500 or an inline setup dialog.
  */
 export async function safeQuery<T>(
   fn: (payload: Payload) => Promise<T>,

@@ -40,17 +40,15 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f4f4f5' },
-    { media: '(prefers-color-scheme: dark)', color: '#050505' },
-  ],
+  colorScheme: 'dark',
+  themeColor: '#050505',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${saira.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`dark ${inter.variable} ${saira.variable}`}>
       <body className="min-h-screen antialiased">
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" forcedTheme="dark" disableTransitionOnChange>
           <SiteNav />
           <main className="mx-auto w-full max-w-7xl px-4 pb-24 pt-6">{children}</main>
           <Toaster position="top-center" richColors />

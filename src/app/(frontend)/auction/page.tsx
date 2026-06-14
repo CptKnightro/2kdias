@@ -2,7 +2,9 @@ import { headers as nextHeaders } from 'next/headers'
 import Link from 'next/link'
 import { Gavel } from '@phosphor-icons/react/dist/ssr'
 import { getPayloadClient } from '@/lib/payload'
-import { PageHeader, EmptyState, SetupBanner } from '@/components/ui-bits'
+import { PageHeader, EmptyState } from '@/components/ui-bits'
+import { DbErrorToast } from '@/components/db-error-toast'
+import { PageSkeleton } from '@/components/skeletons'
 import {
   AuctionRoom,
   type AuctionView,
@@ -150,10 +152,10 @@ export default async function AuctionPage() {
 
   if (!dbReady) {
     return (
-      <div>
-        <PageHeader title="Auction Room" icon={Gavel} />
-        <SetupBanner />
-      </div>
+      <>
+        <DbErrorToast />
+        <PageSkeleton />
+      </>
     )
   }
   return null

@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import { Basketball, Plus } from '@phosphor-icons/react/dist/ssr'
 import { safeQuery } from '@/lib/payload'
-import { PageHeader, SetupBanner, EmptyState, GlassPanel } from '@/components/ui-bits'
+import { PageHeader, EmptyState, GlassPanel } from '@/components/ui-bits'
+import { DbErrorToast } from '@/components/db-error-toast'
+import { PageSkeleton } from '@/components/skeletons'
 import { cn } from '@/lib/utils'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600 // cached; purged on-demand via Payload hooks (src/lib/revalidate.ts)
 export const metadata = { title: 'Matches' }
 
 export default async function MatchesPage() {
@@ -32,6 +34,15 @@ export default async function MatchesPage() {
     }[],
   )
 
+  if (!dbReady) {
+    return (
+      <>
+        <DbErrorToast />
+        <PageSkeleton />
+      </>
+    )
+  }
+
   return (
     <div>
       <PageHeader
@@ -47,7 +58,6 @@ export default async function MatchesPage() {
           </Link>
         }
       />
-      {!dbReady && <SetupBanner />}
       {data.length > 0 ? (
         <div className="space-y-2">
           {data.map((m) => {
@@ -77,18 +87,16 @@ export default async function MatchesPage() {
           })}
         </div>
       ) : (
-        dbReady && (
-          <EmptyState
-            icon={Basketball}
-            title="No matches yet"
-            description="Record your couch co-op games here — scores feed straight into the standings."
-            cta={
-              <Link href="/admin/collections/matches/create" className="skeuo-btn rounded-lg px-4 py-2 font-semibold">
-                Add a Match
-              </Link>
-            }
-          />
-        )
+        <EmptyState
+          icon={Basketball}
+          title="No matches yet"
+          description="Record your couch co-op games here — scores feed straight into the standings."
+          cta={
+            <Link href="/admin/collections/matches/create" className="skeuo-btn rounded-lg px-4 py-2 font-semibold">
+              Add a Match
+            </Link>
+          }
+        />
       )}
     </div>
   )

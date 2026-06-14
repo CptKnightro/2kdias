@@ -4,9 +4,23 @@ import { Users as UsersIcon, CurrencyCircleDollar, IdentificationCard } from '@p
 import { getPayloadClient, mediaUrl } from '@/lib/payload'
 import { toCardPlayer } from '@/lib/players'
 import { PageHeader, GlassPanel, StatTile, EmptyState } from '@/components/ui-bits'
+import { DbErrorToast } from '@/components/db-error-toast'
+import { PageSkeleton } from '@/components/skeletons'
 import { PlayerCard } from '@/components/player-card'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600 // cached; purged on-demand via Payload hooks (src/lib/revalidate.ts)
+
+// Prerender every team page at build so they're static + ISR-cached. New teams
+// still render on-demand (dynamicParams defaults to true) and then cache.
+export async function generateStaticParams() {
+  try {
+    const payload = await getPayloadClient()
+    const res = await payload.find({ collection: 'franchises', limit: 100, depth: 0 })
+    return res.docs.map((f) => ({ slug: String(f.slug) }))
+  } catch {
+    return []
+  }
+}
 
 export default async function TeamPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -14,7 +28,12 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
   try {
     payload = await getPayloadClient()
   } catch {
-    notFound()
+    return (
+      <>
+        <DbErrorToast />
+        <PageSkeleton />
+      </>
+    )
   }
 
   const res = await payload.find({

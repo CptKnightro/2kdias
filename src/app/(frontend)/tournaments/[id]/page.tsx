@@ -2,9 +2,23 @@ import { notFound } from 'next/navigation'
 import { Trophy } from '@phosphor-icons/react/dist/ssr'
 import { getPayloadClient } from '@/lib/payload'
 import { PageHeader, GlassPanel, EmptyState } from '@/components/ui-bits'
+import { DbErrorToast } from '@/components/db-error-toast'
+import { PageSkeleton } from '@/components/skeletons'
 import { cn } from '@/lib/utils'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600 // cached; purged on-demand via Payload hooks (src/lib/revalidate.ts)
+
+// Prerender existing tournament pages at build; new ones render on-demand then
+// cache (dynamicParams defaults to true).
+export async function generateStaticParams() {
+  try {
+    const payload = await getPayloadClient()
+    const res = await payload.find({ collection: 'tournaments', limit: 200, depth: 0 })
+    return res.docs.map((t) => ({ id: String(t.id) }))
+  } catch {
+    return []
+  }
+}
 
 export default async function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -12,7 +26,12 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
   try {
     payload = await getPayloadClient()
   } catch {
-    notFound()
+    return (
+      <>
+        <DbErrorToast />
+        <PageSkeleton />
+      </>
+    )
   }
 
   let t

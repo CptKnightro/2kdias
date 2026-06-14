@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import { ListNumbers } from '@phosphor-icons/react/dist/ssr'
 import { safeQuery } from '@/lib/payload'
-import { PageHeader, SetupBanner, EmptyState, GlassPanel } from '@/components/ui-bits'
+import { PageHeader, EmptyState, GlassPanel } from '@/components/ui-bits'
+import { DbErrorToast } from '@/components/db-error-toast'
+import { PageSkeleton } from '@/components/skeletons'
 import { cn } from '@/lib/utils'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600 // cached; purged on-demand via Payload hooks (src/lib/revalidate.ts)
 export const metadata = { title: 'Standings' }
 
 type Row = {
@@ -63,10 +65,18 @@ export default async function StandingsPage() {
     [] as Row[],
   )
 
+  if (!dbReady) {
+    return (
+      <>
+        <DbErrorToast />
+        <PageSkeleton />
+      </>
+    )
+  }
+
   return (
     <div>
       <PageHeader title="Standings" icon={ListNumbers} subtitle="League table" />
-      {!dbReady && <SetupBanner />}
       {data.length > 0 ? (
         <GlassPanel className="overflow-hidden">
           <table className="w-full text-sm">
@@ -116,18 +126,16 @@ export default async function StandingsPage() {
           </table>
         </GlassPanel>
       ) : (
-        dbReady && (
-          <EmptyState
-            icon={ListNumbers}
-            title="No results yet"
-            description="The table builds itself as you record match results."
-            cta={
-              <Link href="/matches" className="skeuo-btn rounded-lg px-4 py-2 font-semibold">
-                Go to Matches
-              </Link>
-            }
-          />
-        )
+        <EmptyState
+          icon={ListNumbers}
+          title="No results yet"
+          description="The table builds itself as you record match results."
+          cta={
+            <Link href="/matches" className="skeuo-btn rounded-lg px-4 py-2 font-semibold">
+              Go to Matches
+            </Link>
+          }
+        />
       )}
     </div>
   )

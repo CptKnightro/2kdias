@@ -1,10 +1,12 @@
 import { IdentificationCard } from '@phosphor-icons/react/dist/ssr'
 import { safeQuery } from '@/lib/payload'
 import { toCardPlayer, type CardPlayer } from '@/lib/players'
-import { PageHeader, SetupBanner, EmptyState } from '@/components/ui-bits'
+import { PageHeader, EmptyState } from '@/components/ui-bits'
+import { DbErrorToast } from '@/components/db-error-toast'
+import { PageSkeleton } from '@/components/skeletons'
 import { PlayersExplorer } from '@/components/players-explorer'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600 // cached; purged on-demand via Payload hooks (src/lib/revalidate.ts)
 export const metadata = { title: 'Players' }
 
 export default async function PlayersPage() {
@@ -21,6 +23,15 @@ export default async function PlayersPage() {
     [] as CardPlayer[],
   )
 
+  if (!dbReady) {
+    return (
+      <>
+        <DbErrorToast />
+        <PageSkeleton />
+      </>
+    )
+  }
+
   return (
     <div>
       <PageHeader
@@ -28,17 +39,14 @@ export default async function PlayersPage() {
         icon={IdentificationCard}
         subtitle={`${data.length} players · NBA 2K ratings`}
       />
-      {!dbReady && <SetupBanner />}
       {data.length > 0 ? (
         <PlayersExplorer players={data} />
       ) : (
-        dbReady && (
-          <EmptyState
-            icon={IdentificationCard}
-            title="No players yet"
-            description="Run the seed script to import the 389-player pool from your CSV, or add players in the admin."
-          />
-        )
+        <EmptyState
+          icon={IdentificationCard}
+          title="No players yet"
+          description="Run the seed script to import the 389-player pool from your CSV, or add players in the admin."
+        />
       )}
     </div>
   )

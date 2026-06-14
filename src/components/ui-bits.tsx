@@ -1,6 +1,4 @@
 import * as React from 'react'
-import Link from 'next/link'
-import { Database } from '@phosphor-icons/react/dist/ssr'
 import type { Icon } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
@@ -106,21 +104,3 @@ export function EmptyState({
   )
 }
 
-export function SetupBanner() {
-  return (
-    <div className="glass mb-6 flex flex-wrap items-center gap-3 rounded-2xl border-l-4 border-l-primary px-4 py-3">
-      <Database weight="bold" size={20} className="text-primary" />
-      <p className="text-sm">
-        <span className="font-semibold">Database not connected yet.</span>{' '}
-        <span className="text-muted-foreground">
-          Add your Supabase credentials to <code className="rounded bg-foreground/10 px-1">.env</code>, run{' '}
-          <code className="rounded bg-foreground/10 px-1">npm run migrate</code> then{' '}
-          <code className="rounded bg-foreground/10 px-1">npm run seed</code>.
-        </span>
-      </p>
-      <Link href="/admin" className="skeuo-btn ml-auto rounded-lg px-3 py-1.5 text-xs font-semibold">
-        Open Admin
-      </Link>
-    </div>
-  )
-}

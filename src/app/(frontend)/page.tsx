@@ -10,9 +10,11 @@ import {
 } from '@phosphor-icons/react/dist/ssr'
 import { safeQuery } from '@/lib/payload'
 import { PlayerCard, type PlayerCardData } from '@/components/player-card'
-import { GlassPanel, StatTile, SetupBanner } from '@/components/ui-bits'
+import { GlassPanel, StatTile } from '@/components/ui-bits'
+import { DbErrorToast } from '@/components/db-error-toast'
+import { PageSkeleton } from '@/components/skeletons'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600 // cached; purged on-demand via Payload hooks (src/lib/revalidate.ts)
 
 export default async function HomePage() {
   const { data, dbReady } = await safeQuery(
@@ -37,6 +39,15 @@ export default async function HomePage() {
     { franchises: 0, players: 0, sold: 0, topPlayers: [], activity: [], season: 'Season 1' },
   )
 
+  if (!dbReady) {
+    return (
+      <>
+        <DbErrorToast />
+        <PageSkeleton />
+      </>
+    )
+  }
+
   const cards: PlayerCardData[] = data.topPlayers.map((p) => ({
     name: p.name,
     ovr: p.ovr,
@@ -47,8 +58,6 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-8">
-      {!dbReady && <SetupBanner />}
-
       {/* Hero */}
       <GlassPanel strong className="relative overflow-hidden p-8 sm:p-10">
         <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-primary/20 blur-3xl" />

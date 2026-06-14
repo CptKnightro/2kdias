@@ -17,7 +17,6 @@ import {
   X,
 } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
-import { ThemeToggle } from './theme-toggle'
 
 const NAV = [
   { href: '/', label: 'Home', icon: House },
@@ -73,7 +72,6 @@ export function SiteNav() {
         </ul>
 
         <div className="ml-auto flex items-center gap-2">
-          <ThemeToggle />
           <Link
             href="/admin"
             className="skeuo hidden rounded-xl px-3 py-2 text-sm font-semibold text-foreground/80 transition-colors hover:text-primary sm:block"
