@@ -14,12 +14,12 @@ Three pillars: **Auction → Trades → Tournaments**.
 - **Supabase Postgres** via `@payloadcms/db-postgres` (integer IDs).
 - **Supabase Realtime** on the `bids`/`auctions` tables for the live auction.
 - **Supabase Storage** (S3-compatible) via `@payloadcms/storage-s3` for media.
-- **Tailwind v4 + shadcn/ui** (new-york), **Phosphor Bold** icons, **next-themes**.
+- **Tailwind v4 + shadcn/ui** (new-york), **Phosphor Bold** icons. **Dark-only** (no theme switching).
 - Deploys to **Vercel**.
 
 ## Design language
 
-- Accent red `#DF2604`; light = white, dark = pitch black (`next-themes`, default dark).
+- Accent red `#DF2604`; **dark-only**, pitch black. One theme on `:root`; `class="dark"` is hardcoded on `<html>` (kept only so shadcn `dark:` utilities resolve) — there is no light mode.
 - **Skeuomorphism + frosted glass**. Utilities in [globals.css](src/app/(frontend)/globals.css):
   `.glass`, `.glass-strong`, `.skeuo`, `.skeuo-btn`, `.skeuo-inset`, `.foil`, `.tier-*`.
 - Fonts: **Saira Condensed** (display) + **Inter** (body).

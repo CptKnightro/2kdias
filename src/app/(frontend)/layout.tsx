@@ -2,7 +2,6 @@ import React from 'react'
 import type { Metadata, Viewport } from 'next'
 import { Inter, Saira_Condensed } from 'next/font/google'
 import './globals.css'
-import { ThemeProvider } from '@/components/theme-provider'
 import { SiteNav } from '@/components/site-nav'
 import { Toaster } from '@/components/ui/sonner'
 
@@ -48,11 +47,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning className={`dark ${inter.variable} ${saira.variable}`}>
       <body className="min-h-screen antialiased">
-        <ThemeProvider attribute="class" forcedTheme="dark" disableTransitionOnChange>
-          <SiteNav />
-          <main className="mx-auto w-full max-w-7xl px-4 pb-24 pt-6">{children}</main>
-          <Toaster position="top-center" richColors />
-        </ThemeProvider>
+        <SiteNav />
+        <main className="mx-auto w-full max-w-7xl px-4 pb-24 pt-6">{children}</main>
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   )
