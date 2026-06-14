@@ -13,6 +13,7 @@ import {
   Trophy,
   ListNumbers,
   Medal,
+  Crown,
   List,
   X,
 } from '@phosphor-icons/react'
@@ -73,8 +74,11 @@ export function SiteNav() {
 
         <div className="ml-auto flex items-center gap-2">
           <Link
-            href="/admin"
-            className="skeuo hidden rounded-xl px-3 py-2 text-sm font-semibold text-foreground/80 transition-colors hover:text-primary sm:block"
+            href="/commissioner"
+            className={cn(
+              'skeuo hidden rounded-xl px-3 py-2 text-sm font-semibold transition-colors hover:text-primary sm:block',
+              isActive('/commissioner') ? 'text-primary' : 'text-foreground/80',
+            )}
           >
             Commissioner
           </Link>
@@ -109,6 +113,17 @@ export function SiteNav() {
               </li>
             ))}
           </ul>
+          <Link
+            href="/commissioner"
+            onClick={() => setOpen(false)}
+            className={cn(
+              'mt-1 flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold',
+              isActive('/commissioner') ? 'skeuo-btn' : 'hover:bg-foreground/5',
+            )}
+          >
+            <Crown weight="bold" size={18} />
+            Commissioner
+          </Link>
         </div>
       )}
     </header>

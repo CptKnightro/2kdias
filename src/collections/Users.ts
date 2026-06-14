@@ -8,7 +8,18 @@ export const Users: CollectionConfig = {
     defaultColumns: ['name', 'email', 'role', 'franchise'],
     group: 'League',
   },
-  auth: true,
+  auth: {
+    // Sessions last 10 hours, then the token expires and the user must sign in
+    // again — no silent auto-refresh.
+    tokenExpiration: 60 * 60 * 10, // 10 hours (seconds)
+    // Brute-force protection: lock the account for 10 min after 5 bad attempts.
+    maxLoginAttempts: 5,
+    lockTime: 10 * 60 * 1000, // ms
+    cookies: {
+      sameSite: 'Lax',
+      secure: process.env.NODE_ENV === 'production',
+    },
+  },
   access: {
     read: authenticated,
     create: commissionerOnly,
