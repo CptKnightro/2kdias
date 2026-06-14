@@ -17,7 +17,12 @@ export async function safeQuery<T>(
   try {
     const payload = await getPayloadClient()
     return { data: await fn(payload), dbReady: true }
-  } catch {
+  } catch (err) {
+    // During the production build/prerender, swallowing would bake a skeleton
+    // into the static cache and serve it for the whole revalidate window. Fail
+    // the build instead so Vercel keeps the last good deployment. At runtime we
+    // stay graceful (page renders <PageSkeleton/> + a <DbErrorToast/> popup).
+    if (process.env.NEXT_PHASE === 'phase-production-build') throw err
     return { data: fallback, dbReady: false }
   }
 }
