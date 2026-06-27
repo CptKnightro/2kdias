@@ -1,33 +1,28 @@
 import Link from 'next/link'
 import { ListNumbers } from '@phosphor-icons/react/dist/ssr'
 import { safeQuery } from '@/lib/payload'
-import { PageHeader, EmptyState, GlassPanel } from '@/components/ui-bits'
+import { PageHeader, EmptyState } from '@/components/ui-bits'
 import { DbErrorToast } from '@/components/db-error-toast'
 import { PageSkeleton } from '@/components/skeletons'
-import { cn } from '@/lib/utils'
+import { StandingsBoard, type StandingRow } from './standings-board'
 
 export const revalidate = 3600 // cached; purged on-demand via Payload hooks (src/lib/revalidate.ts)
 export const metadata = { title: 'Standings' }
 
-type Row = {
-  id: string
-  name: string
-  color: string
-  w: number
-  l: number
-  pf: number
-  pa: number
-}
+const ownerName = (v: unknown): string | null =>
+  v && typeof v === 'object' && 'name' in v ? ((v as { name?: string }).name ?? null) : null
 
 export default async function StandingsPage() {
-  const { data, dbReady } = await safeQuery(
+  const { data, dbReady } = await safeQuery<StandingRow[]>(
     async (payload) => {
-      const fr = await payload.find({ collection: 'franchises', limit: 50 })
-      const table: Record<string, Row> = {}
+      // depth 1 so the owner relationship is populated (owner is a `users` doc).
+      const fr = await payload.find({ collection: 'franchises', limit: 50, depth: 1 })
+      const table: Record<string, StandingRow> = {}
       for (const f of fr.docs) {
         table[String(f.id)] = {
           id: String(f.id),
-          name: f.name,
+          team: f.name,
+          owner: ownerName(f.owner),
           color: f.color ?? '#DF2604',
           w: 0,
           l: 0,
@@ -57,12 +52,9 @@ export default async function StandingsPage() {
           as > hs ? table[away].w++ : table[away].l++
         }
       }
-      const rows = Object.values(table).sort(
-        (a, b) => b.w - a.w || b.pf - b.pa - (a.pf - a.pa),
-      )
-      return rows
+      return Object.values(table).sort((a, b) => b.w - a.w || b.pf - b.pa - (a.pf - a.pa))
     },
-    [] as Row[],
+    [] as StandingRow[],
   )
 
   if (!dbReady) {
@@ -76,62 +68,14 @@ export default async function StandingsPage() {
 
   return (
     <div>
-      <PageHeader title="Standings" icon={ListNumbers} subtitle="League table" />
+      <PageHeader title="Standings" icon={ListNumbers} subtitle="Seeding & league table" />
       {data.length > 0 ? (
-        <GlassPanel className="overflow-hidden">
-          <div className="overflow-x-auto">
-          <table className="w-full min-w-[22rem] text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
-                <th className="px-4 py-3">#</th>
-                <th className="px-2 py-3">Team</th>
-                <th className="px-2 py-3 text-center">W</th>
-                <th className="px-2 py-3 text-center">L</th>
-                <th className="px-2 py-3 text-center">PF</th>
-                <th className="px-2 py-3 text-center">PA</th>
-                <th className="px-4 py-3 text-center">Diff</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((r, i) => (
-                <tr
-                  key={r.id}
-                  className={cn(
-                    'border-b border-border/50 transition-colors hover:bg-foreground/5',
-                    i === 0 && 'bg-primary/5',
-                  )}
-                >
-                  <td className="px-4 py-3 font-display font-bold text-muted-foreground">{i + 1}</td>
-                  <td className="px-2 py-3">
-                    <span className="flex items-center gap-2 font-semibold">
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: r.color }} />
-                      {r.name}
-                    </span>
-                  </td>
-                  <td className="px-2 py-3 text-center font-bold text-success">{r.w}</td>
-                  <td className="px-2 py-3 text-center text-muted-foreground">{r.l}</td>
-                  <td className="px-2 py-3 text-center">{r.pf}</td>
-                  <td className="px-2 py-3 text-center">{r.pa}</td>
-                  <td
-                    className={cn(
-                      'px-4 py-3 text-center font-display font-bold',
-                      r.pf - r.pa > 0 ? 'text-success' : r.pf - r.pa < 0 ? 'text-primary' : '',
-                    )}
-                  >
-                    {r.pf - r.pa > 0 ? '+' : ''}
-                    {r.pf - r.pa}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          </div>
-        </GlassPanel>
+        <StandingsBoard rows={data} />
       ) : (
         <EmptyState
           icon={ListNumbers}
-          title="No results yet"
-          description="The table builds itself as you record match results."
+          title="No teams yet"
+          description="Add franchises and the seeding builds itself — log match results to rank them."
           cta={
             <Link href="/matches" className="skeuo-btn rounded-lg px-4 py-2 font-semibold">
               Go to Matches

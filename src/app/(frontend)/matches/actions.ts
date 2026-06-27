@@ -37,18 +37,23 @@ export async function logMatch(input: {
   awayFranchise: string
   homeScore: string | number
   awayScore: string | number
+  walkover?: boolean
 }): Promise<Result> {
   try {
     const homeFranchise = Number(input.homeFranchise)
     const awayFranchise = Number(input.awayFranchise)
+    const walkover = !!input.walkover
     const homeScore = int(input.homeScore)
     const awayScore = int(input.awayScore)
 
     if (!Number.isFinite(homeFranchise)) return { ok: false, error: 'Pick the first team' }
     if (!Number.isFinite(awayFranchise)) return { ok: false, error: 'Pick the second team' }
     if (homeFranchise === awayFranchise) return { ok: false, error: 'Teams must be different' }
-    if (homeScore == null || awayScore == null) return { ok: false, error: 'Enter both scores' }
-    if (homeScore < 0 || awayScore < 0) return { ok: false, error: 'Scores cannot be negative' }
+    // Walkovers have no game played, so scores are optional; otherwise both are required.
+    if (!walkover) {
+      if (homeScore == null || awayScore == null) return { ok: false, error: 'Enter both scores' }
+      if (homeScore < 0 || awayScore < 0) return { ok: false, error: 'Scores cannot be negative' }
+    }
 
     const payload = await getPayloadClient()
     const doc = await payload.create({
@@ -59,6 +64,7 @@ export async function logMatch(input: {
         awayFranchise,
         homeScore,
         awayScore,
+        walkover,
         status: 'final' as Match['status'],
         playedAt: new Date().toISOString(),
       },

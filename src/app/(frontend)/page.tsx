@@ -1,5 +1,4 @@
 import { safeQuery } from '@/lib/payload'
-import type { PlayerCardData } from '@/components/player-card'
 import { DbErrorToast } from '@/components/db-error-toast'
 import { PageSkeleton } from '@/components/skeletons'
 import { HomeToggle } from '@/components/home/home-toggle'
@@ -71,12 +70,11 @@ function buildStats(
 export default async function HomePage() {
   const { data, dbReady } = await safeQuery(
     async (payload) => {
-      const [franchises, players, sold, topPlayers, activity, auctions, trades, settings, franchiseList, matches] =
+      const [franchises, players, sold, activity, auctions, trades, settings, franchiseList, matches] =
         await Promise.all([
           payload.count({ collection: 'franchises' }),
           payload.count({ collection: 'players' }),
           payload.count({ collection: 'players', where: { status: { equals: 'sold' } } }),
-          payload.find({ collection: 'players', sort: '-ovr', limit: 6, depth: 1 }),
           payload.find({ collection: 'activity', sort: '-createdAt', limit: 20, depth: 1 }),
           payload.find({ collection: 'auctions', sort: '-updatedAt', limit: 10, depth: 0 }),
           payload.find({ collection: 'trades', sort: '-createdAt', limit: 8, depth: 1 }),
@@ -102,15 +100,6 @@ export default async function HomePage() {
         players: players.totalDocs,
         sold: sold.totalDocs,
         season: settings?.seasonName ?? 'Season 1',
-        cards: topPlayers.docs.map(
-          (p): PlayerCardData => ({
-            name: p.name,
-            ovr: p.ovr,
-            position: p.position,
-            nbaTeam: p.nbaTeam,
-            category: p.category,
-          }),
-        ),
         activity: activity.docs.map((a) => ({
           id: a.id as number,
           type: (a.type ?? 'system') as ActivityType,
@@ -155,7 +144,6 @@ export default async function HomePage() {
       players: 0,
       sold: 0,
       season: 'Season 1',
-      cards: [] as PlayerCardData[],
       activity: [] as StatusData['activity'],
       auctions: [] as StatusData['auctions'],
       trades: [] as StatusData['trades'],
@@ -182,7 +170,6 @@ export default async function HomePage() {
           franchises={data.franchises}
           players={data.players}
           sold={data.sold}
-          cards={data.cards}
           stats={data.stats}
         />
       }

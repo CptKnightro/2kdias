@@ -404,6 +404,10 @@ export interface Match {
   awayScore?: number | null;
   awayFranchise: number | Franchise;
   /**
+   * Match awarded by walkover (no game played).
+   */
+  walkover?: boolean | null;
+  /**
    * e.g. [[28,24],[19,30],...] home/away per quarter.
    */
   quarterScores?:
@@ -721,6 +725,7 @@ export interface MatchesSelect<T extends boolean = true> {
   homeScore?: T;
   awayScore?: T;
   awayFranchise?: T;
+  walkover?: T;
   quarterScores?: T;
   mvp?: T;
   playedAt?: T;

@@ -60,6 +60,12 @@ export const Matches: CollectionConfig = {
       ],
     },
     {
+      name: 'walkover',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: { description: 'Match awarded by walkover (no game played).' },
+    },
+    {
       name: 'quarterScores',
       type: 'json',
       admin: { description: 'e.g. [[28,24],[19,30],...] home/away per quarter.' },
