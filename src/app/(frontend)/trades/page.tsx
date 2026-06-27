@@ -1,10 +1,11 @@
-import Link from 'next/link'
 import { ArrowsLeftRight, ArrowRight } from '@phosphor-icons/react/dist/ssr'
 import { safeQuery } from '@/lib/payload'
 import { PageHeader, EmptyState, GlassPanel } from '@/components/ui-bits'
 import { DbErrorToast } from '@/components/db-error-toast'
 import { PageSkeleton } from '@/components/skeletons'
 import { cn } from '@/lib/utils'
+import { ProposeTrade, type PlayerLite } from './propose-trade'
+import type { Option } from '@/components/commissioner/fields'
 
 export const revalidate = 3600 // cached; purged on-demand via Payload hooks (src/lib/revalidate.ts)
 export const metadata = { title: 'Trade Center' }
@@ -17,16 +18,35 @@ const STATUS_STYLE: Record<string, string> = {
   vetoed: 'bg-primary/15 text-primary',
 }
 
+const fid = (v: unknown): string =>
+  v == null ? '' : String(typeof v === 'object' ? (v as { id: number }).id : v)
+
+type TradeCard = {
+  id: string
+  from: string
+  to: string
+  offered: string[]
+  requested: string[]
+  cash: number
+  status: string
+}
+
+type TradesData = {
+  trades: TradeCard[]
+  franchiseOptions: Option[]
+  players: PlayerLite[]
+}
+
 export default async function TradesPage() {
-  const { data, dbReady } = await safeQuery(
+  const { data, dbReady } = await safeQuery<TradesData>(
     async (payload) => {
-      const res = await payload.find({
-        collection: 'trades',
-        sort: '-createdAt',
-        limit: 50,
-        depth: 1,
-      })
-      return res.docs.map((t) => ({
+      const [tr, fr, pl] = await Promise.all([
+        payload.find({ collection: 'trades', sort: '-createdAt', limit: 50, depth: 1 }),
+        payload.find({ collection: 'franchises', sort: 'name', limit: 200, depth: 0 }),
+        payload.find({ collection: 'players', sort: 'name', limit: 500, depth: 0 }),
+      ])
+
+      const trades: TradeCard[] = tr.docs.map((t) => ({
         id: String(t.id),
         from: typeof t.fromFranchise === 'object' ? (t.fromFranchise?.name ?? '—') : '—',
         to: typeof t.toFranchise === 'object' ? (t.toFranchise?.name ?? '—') : '—',
@@ -39,16 +59,19 @@ export default async function TradesPage() {
         cash: t.cashAdjustment ?? 0,
         status: t.status ?? 'proposed',
       }))
+
+      const franchiseOptions: Option[] = fr.docs.map((f) => ({ label: f.name, value: String(f.id) }))
+
+      const players: PlayerLite[] = pl.docs.map((p) => ({
+        id: String(p.id),
+        name: p.name,
+        ovr: p.ovr ?? 0,
+        franchise: fid(p.franchise),
+      }))
+
+      return { trades, franchiseOptions, players }
     },
-    [] as {
-      id: string
-      from: string
-      to: string
-      offered: string[]
-      requested: string[]
-      cash: number
-      status: string
-    }[],
+    { trades: [], franchiseOptions: [], players: [] },
   )
 
   if (!dbReady) {
@@ -60,21 +83,19 @@ export default async function TradesPage() {
     )
   }
 
+  const { trades, franchiseOptions, players } = data
+
   return (
     <div>
       <PageHeader
         title="Trade Center"
         icon={ArrowsLeftRight}
         subtitle="Propose, counter & settle deals"
-        action={
-          <Link href="/admin/collections/trades/create" className="skeuo-btn rounded-lg px-4 py-2 text-sm font-semibold">
-            Propose Trade
-          </Link>
-        }
+        action={<ProposeTrade franchiseOptions={franchiseOptions} players={players} />}
       />
-      {data.length > 0 ? (
+      {trades.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2">
-          {data.map((t) => (
+          {trades.map((t) => (
             <GlassPanel key={t.id} className="p-5">
               <div className="mb-3 flex items-center justify-between">
                 <span className="font-display text-lg font-bold">
@@ -112,12 +133,8 @@ export default async function TradesPage() {
         <EmptyState
           icon={ArrowsLeftRight}
           title="No trades yet"
-          description="Propose a trade to another franchise — offer players and cash, then they accept, counter, or reject."
-          cta={
-            <Link href="/admin/collections/trades/create" className="skeuo-btn rounded-lg px-4 py-2 font-semibold">
-              Propose a Trade
-            </Link>
-          }
+          description="Propose a trade to another franchise — pick the teams, offer up to 3 players, and ask for up to 3. The commissioner accepts, counters, or rejects."
+          cta={<ProposeTrade franchiseOptions={franchiseOptions} players={players} />}
         />
       )}
     </div>

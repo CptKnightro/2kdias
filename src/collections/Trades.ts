@@ -39,14 +39,16 @@ export const Trades: CollectionConfig = {
       type: 'relationship',
       relationTo: 'players',
       hasMany: true,
-      admin: { description: 'Players the proposer gives up.' },
+      maxRows: 3, // league rule: offer at most 3 players
+      admin: { description: 'Players the proposer gives up (max 3).' },
     },
     {
       name: 'requestedPlayers',
       type: 'relationship',
       relationTo: 'players',
       hasMany: true,
-      admin: { description: 'Players the proposer wants.' },
+      maxRows: 3, // league rule: request at most 3 players
+      admin: { description: 'Players the proposer wants (max 3).' },
     },
     {
       name: 'cashAdjustment',

@@ -70,12 +70,16 @@ export function MultiSelect({
   value,
   onChange,
   empty = 'No options',
+  max,
 }: {
   options: Option[]
   value: string[]
   onChange: (v: string[]) => void
   empty?: string
+  /** Cap the number of selectable options. At the cap, unselected chips disable. */
+  max?: number
 }) {
+  const atCap = max != null && value.length >= max
   const toggle = (v: string) =>
     onChange(value.includes(v) ? value.filter((x) => x !== v) : [...value, v])
   if (options.length === 0) {
@@ -85,14 +89,17 @@ export function MultiSelect({
     <div className="flex flex-wrap gap-1.5">
       {options.map((o) => {
         const on = value.includes(o.value)
+        const blocked = atCap && !on
         return (
           <button
             key={o.value}
             type="button"
+            disabled={blocked}
             onClick={() => toggle(o.value)}
             className={cn(
               'rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
               on ? 'skeuo-btn text-foreground' : 'skeuo-inset text-foreground/60 hover:text-foreground',
+              blocked && 'cursor-not-allowed opacity-40 hover:text-foreground/60',
             )}
           >
             {o.label}
