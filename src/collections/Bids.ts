@@ -44,8 +44,10 @@ export const Bids: CollectionConfig = {
           typeof data.franchise === 'object' ? data.franchise?.id : data.franchise
         if (!franchiseId) throw new APIError('Bid must reference a franchise.', 400)
 
-        // Owners may only bid for their own franchise.
-        if (!isCommissioner(user)) {
+        // A signed-in owner may only bid for their own franchise. Public
+        // bidders are login-free — they pick a team on the auction page — so
+        // there is no user to pin against; the picked franchise stands.
+        if (user && !isCommissioner(user)) {
           const ownFid =
             typeof user?.franchise === 'object' ? user?.franchise?.id : user?.franchise
           if (ownFid !== franchiseId)

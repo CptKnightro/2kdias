@@ -51,12 +51,12 @@ export function SiteNav() {
             width={1606}
             height={592}
             priority
-            className="h-7 w-auto drop-shadow-[0_2px_6px_rgba(223,38,4,0.35)]"
+            className="h-7 w-auto"
           />
         </Link>
 
         {/* Desktop links */}
-        <ul className="ml-1 hidden flex-1 items-center gap-1 lg:flex">
+        <ul className="ml-1 hidden flex-1 items-center gap-1 xl:flex">
           {NAV.map(({ href, label, icon: Icon }) => (
             <li key={href}>
               <Link
@@ -89,7 +89,7 @@ export function SiteNav() {
             type="button"
             aria-label="Menu"
             onClick={() => setOpen((v) => !v)}
-            className="skeuo grid h-9 w-9 place-items-center rounded-full lg:hidden"
+            className="skeuo grid h-9 w-9 place-items-center rounded-full xl:hidden"
           >
             {open ? <X weight="bold" size={18} /> : <List weight="bold" size={18} />}
           </button>
@@ -98,7 +98,7 @@ export function SiteNav() {
 
       {/* Mobile drawer */}
       {open && (
-        <div className="glass-strong mx-auto mt-2 max-w-7xl rounded-2xl p-2 lg:hidden">
+        <div className="glass-strong mx-auto mt-2 max-w-7xl rounded-2xl p-2 xl:hidden">
           <ul className="grid grid-cols-2 gap-1">
             {NAV.map(({ href, label, icon: Icon }) => (
               <li key={href}>

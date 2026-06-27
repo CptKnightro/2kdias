@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { getPayloadClient } from '@/lib/payload'
+import { computeExpiresAt, type DurationUnit } from '@/lib/trades'
 
 export type Result = { ok: boolean; error?: string; id?: number }
 
@@ -17,13 +18,16 @@ const ids = (v: unknown): number[] =>
  *   - from/to must be two different franchises
  *   - at most 3 players offered and at most 3 requested
  *   - at least one player must change hands
- * Always lands as a `proposed` trade for the commissioner to settle.
+ * Always lands as a `proposed` trade for the commissioner to settle, stamped
+ * with a deadline (`expiresAt`) after which it auto-expires.
  */
 export async function proposeTrade(input: {
   fromFranchise: string
   toFranchise: string
   offeredPlayers?: string[]
   requestedPlayers?: string[]
+  expiresInValue?: number | string
+  expiresInUnit?: DurationUnit
 }): Promise<Result> {
   try {
     const fromFranchise = Number(input.fromFranchise)
@@ -51,6 +55,7 @@ export async function proposeTrade(input: {
         offeredPlayers,
         requestedPlayers,
         status: 'proposed',
+        expiresAt: computeExpiresAt(input.expiresInValue, input.expiresInUnit),
       },
     })
 

@@ -15,14 +15,17 @@ async function getUser() {
   return { payload, user }
 }
 
-/** Owner (or commissioner) places a bid. Validation lives in the Bids hook. */
+/**
+ * Place a bid. Login-free — the bidder picks a team on the auction page, so
+ * anyone on the couch can bid for that team (mirrors the public match log).
+ * Validation lives in the Bids `beforeValidate` hook.
+ */
 export async function placeBid(input: {
   auctionId: string
   franchiseId: string
   amount: number
 }): Promise<Result> {
   const { payload, user } = await getUser()
-  if (!user) return { ok: false, error: 'You must be signed in to bid.' }
   try {
     await payload.create({
       collection: 'bids',
@@ -31,8 +34,11 @@ export async function placeBid(input: {
         franchise: Number(input.franchiseId),
         amount: input.amount,
       },
-      user,
-      overrideAccess: false,
+      // overrideAccess skips the `authenticated` create rule; the Bids hook
+      // still enforces purse / increment / squad-cap. A signed-in user is still
+      // passed through so an owner stays pinned to their own team.
+      user: user ?? undefined,
+      overrideAccess: true,
     })
     revalidatePath('/auction')
     return { ok: true }

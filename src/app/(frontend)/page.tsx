@@ -5,7 +5,19 @@ import { HomeToggle } from '@/components/home/home-toggle'
 import { DashboardView } from '@/components/home/dashboard-view'
 import { StatusView, type ActivityType, type StatusData } from '@/components/home/status-view'
 import { LogMatchView } from '@/components/home/log-match-view'
-import type { TeamStat } from '@/components/home/match-stats'
+import {
+  buildStats,
+  buildHeadToHead,
+  buildForm,
+  buildRecords,
+  buildTimeline,
+  type TeamStat,
+  type FranchiseRow,
+  type HeadToHead,
+  type FormRow,
+  type Records,
+  type Timeline,
+} from '@/lib/home-stats'
 import type { RecentMatch } from '@/components/home/recent-matches'
 import type { Option } from '@/components/commissioner/fields'
 
@@ -20,61 +32,11 @@ const relColor = (v: unknown): string | null =>
   v && typeof v === 'object' && 'color' in v ? ((v as { color?: string }).color ?? null) : null
 const count = (v: unknown): number => (Array.isArray(v) ? v.length : 0)
 
-const relId = (v: unknown): number | null =>
-  v == null ? null : typeof v === 'object' ? ((v as { id?: number }).id ?? null) : Number(v)
-
-/** Roll up logged matches into per-team win/loss + points totals for the dashboard charts. */
-function buildStats(
-  franchises: { id: number; name: string; color?: string | null }[],
-  matches: { homeFranchise: unknown; awayFranchise: unknown; homeScore?: number | null; awayScore?: number | null }[],
-): TeamStat[] {
-  const map = new Map<number, TeamStat>()
-  for (const f of franchises) {
-    map.set(f.id, {
-      id: f.id,
-      name: f.name,
-      color: f.color ?? null,
-      games: 0,
-      wins: 0,
-      losses: 0,
-      pointsFor: 0,
-      pointsAgainst: 0,
-    })
-  }
-  for (const m of matches) {
-    const hid = relId(m.homeFranchise)
-    const aid = relId(m.awayFranchise)
-    const hScore = m.homeScore
-    const aScore = m.awayScore
-    if (hid == null || aid == null || hScore == null || aScore == null) continue
-    const home = map.get(hid)
-    const away = map.get(aid)
-    if (!home || !away) continue
-    home.games++
-    away.games++
-    home.pointsFor += hScore
-    home.pointsAgainst += aScore
-    away.pointsFor += aScore
-    away.pointsAgainst += hScore
-    if (hScore > aScore) {
-      home.wins++
-      away.losses++
-    } else if (aScore > hScore) {
-      away.wins++
-      home.losses++
-    }
-  }
-  return [...map.values()]
-}
-
 export default async function HomePage() {
   const { data, dbReady } = await safeQuery(
     async (payload) => {
-      const [franchises, players, sold, activity, auctions, trades, settings, franchiseList, matches] =
+      const [activity, auctions, trades, settings, franchiseList, matches] =
         await Promise.all([
-          payload.count({ collection: 'franchises' }),
-          payload.count({ collection: 'players' }),
-          payload.count({ collection: 'players', where: { status: { equals: 'sold' } } }),
           payload.find({ collection: 'activity', sort: '-createdAt', limit: 20, depth: 1 }),
           payload.find({ collection: 'auctions', sort: '-updatedAt', limit: 10, depth: 0 }),
           payload.find({ collection: 'trades', sort: '-createdAt', limit: 8, depth: 1 }),
@@ -89,16 +51,15 @@ export default async function HomePage() {
           }),
         ])
 
-      const franchiseRows = franchiseList.docs.map((f) => ({
+      const franchiseRows: FranchiseRow[] = franchiseList.docs.map((f) => ({
         id: f.id as number,
         name: f.name,
-        color: f.color,
+        owner: f.ownerName ?? null,
+        color: f.color ?? null,
       }))
+      const matchDocs = matches.docs
 
       return {
-        franchises: franchises.totalDocs,
-        players: players.totalDocs,
-        sold: sold.totalDocs,
         season: settings?.seasonName ?? 'Season 1',
         activity: activity.docs.map((a) => ({
           id: a.id as number,
@@ -124,7 +85,11 @@ export default async function HomePage() {
           date: fmtDate(t.createdAt),
         })),
         franchiseOptions: franchiseRows.map((f): Option => ({ label: f.name, value: String(f.id) })),
-        stats: buildStats(franchiseRows, matches.docs),
+        stats: buildStats(franchiseRows, matchDocs),
+        headToHead: buildHeadToHead(franchiseRows, matchDocs),
+        form: buildForm(franchiseRows, matchDocs),
+        records: buildRecords(franchiseRows, matchDocs),
+        timeline: buildTimeline(franchiseRows, matchDocs),
         recent: matches.docs.slice(0, 10).map(
           (m): RecentMatch => ({
             id: m.id as number,
@@ -140,15 +105,22 @@ export default async function HomePage() {
       }
     },
     {
-      franchises: 0,
-      players: 0,
-      sold: 0,
       season: 'Season 1',
       activity: [] as StatusData['activity'],
       auctions: [] as StatusData['auctions'],
       trades: [] as StatusData['trades'],
       franchiseOptions: [] as Option[],
       stats: [] as TeamStat[],
+      headToHead: { teams: [], matrix: {} } as HeadToHead,
+      form: [] as FormRow[],
+      records: {
+        highestTeamScore: null,
+        biggestBlowout: null,
+        closestGame: null,
+        highestScoringMatch: null,
+        longestStreak: null,
+      } as Records,
+      timeline: { series: [], data: [] } as Timeline,
       recent: [] as RecentMatch[],
     },
   )
@@ -167,10 +139,11 @@ export default async function HomePage() {
       dashboard={
         <DashboardView
           season={data.season}
-          franchises={data.franchises}
-          players={data.players}
-          sold={data.sold}
           stats={data.stats}
+          headToHead={data.headToHead}
+          form={data.form}
+          records={data.records}
+          timeline={data.timeline}
         />
       }
       status={<StatusView auctions={data.auctions} activity={data.activity} trades={data.trades} />}

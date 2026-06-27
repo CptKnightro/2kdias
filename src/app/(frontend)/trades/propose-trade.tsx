@@ -12,12 +12,31 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Field, Select, MultiSelect, SubmitButton, MiniButton, type Option } from '@/components/commissioner/fields'
+import {
+  Field,
+  Select,
+  MultiSelect,
+  NumberInput,
+  SubmitButton,
+  MiniButton,
+  type Option,
+} from '@/components/commissioner/fields'
 import { proposeTrade } from './actions'
+import type { DurationUnit } from '@/lib/trades'
 
 export type PlayerLite = { id: string; name: string; ovr: number; franchise: string }
 
 const MAX_PLAYERS = 3
+
+const UNIT_OPTIONS: Option[] = [
+  { label: 'Days', value: 'days' },
+  { label: 'Weeks', value: 'weeks' },
+  { label: 'Months', value: 'months' },
+]
+
+// League cap is 3 months — clamp each unit to its equivalent so the offer
+// window never exceeds that (the server clamps too; this is just nicer UX).
+const UNIT_MAX: Record<DurationUnit, number> = { days: 90, weeks: 12, months: 3 }
 
 export function ProposeTrade({
   franchiseOptions,
@@ -31,7 +50,9 @@ export function ProposeTrade({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button className="skeuo-btn rounded-lg px-4 py-2 text-sm font-semibold">Propose Trade</button>
+        <button className="skeuo-btn rounded-lg px-4 py-2 text-sm font-semibold">
+          Propose Trade
+        </button>
       </DialogTrigger>
       {/* Transparent shell — the inner .glass-strong panel carries the frosted look,
           since `bg-*` utilities would otherwise override the component-layer glass.
@@ -81,7 +102,13 @@ function ProposeForm({
   const [toFranchise, setToFranchise] = React.useState('')
   const [offeredPlayers, setOfferedPlayers] = React.useState<string[]>([])
   const [requestedPlayers, setRequestedPlayers] = React.useState<string[]>([])
+  const [durationValue, setDurationValue] = React.useState(3)
+  const [durationUnit, setDurationUnit] = React.useState<DurationUnit>('days')
   const [pending, start] = React.useTransition()
+
+  // Keep the number sane for the chosen unit (1 … unit max, ≤ 3 months overall).
+  const clampDuration = (value: number, unit: DurationUnit) =>
+    Math.min(UNIT_MAX[unit], Math.max(1, Math.floor(value) || 1))
 
   const toOption = (p: PlayerLite): Option => ({ label: `${p.name} · ${p.ovr}`, value: p.id })
 
@@ -114,7 +141,14 @@ function ProposeForm({
     if (offeredPlayers.length === 0 && requestedPlayers.length === 0)
       return toast.error('Add at least one player to the trade')
     start(async () => {
-      const res = await proposeTrade({ fromFranchise, toFranchise, offeredPlayers, requestedPlayers })
+      const res = await proposeTrade({
+        fromFranchise,
+        toFranchise,
+        offeredPlayers,
+        requestedPlayers,
+        expiresInValue: clampDuration(durationValue, durationUnit),
+        expiresInUnit: durationUnit,
+      })
       if (res.ok) {
         toast.success('Trade proposed')
         onDone()
@@ -136,7 +170,10 @@ function ProposeForm({
             placeholder="— select —"
           />
         </Field>
-        <ArrowRight weight="bold" className="mb-2.5 hidden size-5 self-center text-primary sm:block" />
+        <ArrowRight
+          weight="bold"
+          className="mb-2.5 hidden size-5 self-center text-primary sm:block"
+        />
         <Field label="To team">
           <Select
             value={toFranchise}
@@ -147,7 +184,10 @@ function ProposeForm({
         </Field>
       </div>
 
-      <Field label={`Players offered (${offeredPlayers.length}/${MAX_PLAYERS})`} hint="From the 'from' team's roster">
+      <Field
+        label={`Players offered (${offeredPlayers.length}/${MAX_PLAYERS})`}
+        hint="From the 'from' team's roster"
+      >
         <MultiSelect
           options={offeredOptions}
           value={offeredPlayers}
@@ -157,7 +197,10 @@ function ProposeForm({
         />
       </Field>
 
-      <Field label={`Players requested (${requestedPlayers.length}/${MAX_PLAYERS})`} hint="From the 'to' team's roster">
+      <Field
+        label={`Players requested (${requestedPlayers.length}/${MAX_PLAYERS})`}
+        hint="From the 'to' team's roster"
+      >
         <MultiSelect
           options={requestedOptions}
           value={requestedPlayers}
@@ -165,6 +208,30 @@ function ProposeForm({
           max={MAX_PLAYERS}
           empty={toFranchise ? 'This team has no players' : 'Pick a team to trade to first'}
         />
+      </Field>
+
+      <Field
+        label="Loan length"
+        hint="How long the players play for the other team once accepted (max 3 months)"
+      >
+        <div className="grid grid-cols-[1fr_1.4fr] gap-2">
+          <NumberInput
+            min={1}
+            max={UNIT_MAX[durationUnit]}
+            value={durationValue}
+            onChange={(e) => setDurationValue(clampDuration(Number(e.target.value), durationUnit))}
+            className="text-center tabular-nums"
+          />
+          <Select
+            value={durationUnit}
+            onChange={(e) => {
+              const unit = e.target.value as DurationUnit
+              setDurationUnit(unit)
+              setDurationValue((v) => clampDuration(v, unit))
+            }}
+            options={UNIT_OPTIONS}
+          />
+        </div>
       </Field>
 
       <div className="flex gap-2 pt-1">

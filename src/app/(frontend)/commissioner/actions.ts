@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { getPayloadClient } from '@/lib/payload'
 import { requireCommissioner } from '@/lib/auth'
+import { computeExpiresAt, durationToDays, isTradeExpired, type DurationUnit } from '@/lib/trades'
+import { activateLoan, revertLoan } from '@/lib/trades-server'
 import type { Player, Tournament, Match, Trade, Award, User } from '@/payload-types'
 
 export type Result = { ok: boolean; error?: string; id?: number }
@@ -210,7 +212,8 @@ export async function deleteMatch(id: number): Promise<Result> {
 }
 
 // — Trades ——————————————————————————————————————————————————————————————————
-const TRADE_PATHS = ['/trades', '/teams', '/teams/[slug]', '/players']
+// Loans move players between rosters, so standings + team pages refresh too.
+const TRADE_PATHS = ['/trades', '/teams', '/teams/[slug]', '/players', '/standings']
 
 export async function createTrade(input: {
   fromFranchise: string
@@ -220,7 +223,12 @@ export async function createTrade(input: {
   cashAdjustment?: string
   note?: string
   status?: string
+  expiresInValue?: number | string
+  expiresInUnit?: DurationUnit
 }): Promise<Result> {
+  const status = (s(input.status) ?? 'proposed') as Trade['status']
+  // A deadline only applies to still-open offers; settled rows get no timer.
+  const open = status === 'proposed' || status === 'countered'
   const data = {
     fromFranchise: n(input.fromFranchise)!,
     toFranchise: n(input.toFranchise)!,
@@ -228,11 +236,18 @@ export async function createTrade(input: {
     requestedPlayers: ids(input.requestedPlayers),
     cashAdjustment: n(input.cashAdjustment) ?? 0,
     note: s(input.note) ?? null,
-    status: (s(input.status) ?? 'proposed') as Trade['status'],
+    status,
+    expiresAt: open ? computeExpiresAt(input.expiresInValue, input.expiresInUnit) : null,
   }
   return run(async () => {
     const payload = await getPayloadClient()
     const doc = await payload.create({ collection: 'trades', data })
+    // Recording a trade as already accepted starts the loan immediately.
+    if (status === 'accepted') {
+      await activateLoan(payload, doc.id as number, {
+        loanDays: durationToDays(input.expiresInValue, input.expiresInUnit),
+      })
+    }
     return doc.id as number
   }, TRADE_PATHS)
 }
@@ -240,6 +255,23 @@ export async function createTrade(input: {
 export async function updateTradeStatus(id: number, status: string): Promise<Result> {
   return run(async () => {
     const payload = await getPayloadClient()
+    const current = await payload.findByID({ collection: 'trades', id, depth: 0 })
+    const wasActiveLoan = current.status === 'accepted'
+
+    // Accepting starts the loan: stamp the window and move the players.
+    if (status === 'accepted') {
+      if (current.status === 'expired' || isTradeExpired(current.status ?? '', current.expiresAt)) {
+        throw new Error('This trade has expired and can no longer be accepted.')
+      }
+      await payload.update({ collection: 'trades', id, data: { status: 'accepted' } })
+      await activateLoan(payload, id)
+      return
+    }
+
+    // Cancelling an active loan sends the players home first.
+    if (wasActiveLoan && ['rejected', 'vetoed', 'expired'].includes(status)) {
+      await revertLoan(payload, id)
+    }
     await payload.update({ collection: 'trades', id, data: { status: status as Trade['status'] } })
   }, TRADE_PATHS)
 }

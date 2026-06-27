@@ -48,6 +48,7 @@ const TRADE_STATUS: Record<string, string> = {
   accepted: '#22C55E',
   rejected: '#EF4444',
   vetoed: '#EF4444',
+  expired: '#71717A',
 }
 
 function AuctionBadge({ status }: { status: string }) {
@@ -128,7 +129,10 @@ export function StatusView({ auctions, activity, trades }: StatusData) {
                 const meta = TYPE_META[a.type] ?? TYPE_META.system
                 const Icon = meta.icon
                 return (
-                  <li key={a.id} className="flex gap-3 rounded-2xl px-2 py-2.5 transition-colors hover:bg-foreground/[0.03]">
+                  <li
+                    key={a.id}
+                    className="flex gap-3 rounded-2xl px-2 py-2.5 transition-colors hover:bg-foreground/[0.03]"
+                  >
                     <span
                       className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl"
                       style={{ background: `${meta.color}1f`, color: meta.color }}
@@ -138,7 +142,10 @@ export function StatusView({ auctions, activity, trades }: StatusData) {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm leading-snug">{a.message}</p>
                       <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                        <span className="font-semibold uppercase tracking-wider" style={{ color: meta.color }}>
+                        <span
+                          className="font-semibold uppercase tracking-wider"
+                          style={{ color: meta.color }}
+                        >
                           {meta.label}
                         </span>
                         {a.franchiseName && (
@@ -179,7 +186,11 @@ export function StatusView({ auctions, activity, trades }: StatusData) {
                 <li key={t.id} className="skeuo rounded-2xl p-4">
                   <div className="flex items-center gap-2 text-sm font-semibold">
                     <span className="truncate">{t.fromName}</span>
-                    <ArrowsLeftRight weight="bold" size={14} className="shrink-0 text-muted-foreground" />
+                    <ArrowsLeftRight
+                      weight="bold"
+                      size={14}
+                      className="shrink-0 text-muted-foreground"
+                    />
                     <span className="truncate">{t.toName}</span>
                   </div>
                   <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground">
@@ -203,7 +214,10 @@ export function StatusView({ auctions, activity, trades }: StatusData) {
             <GlassPanel className="flex flex-col items-center gap-2 p-6 text-center">
               <Stack weight="bold" size={24} className="text-muted-foreground" />
               <p className="text-sm text-muted-foreground">No trades yet.</p>
-              <Link href="/commissioner/trades" className="text-xs font-semibold text-primary hover:underline">
+              <Link
+                href="/commissioner/trades"
+                className="text-xs font-semibold text-primary hover:underline"
+              >
                 Record a trade
               </Link>
             </GlassPanel>

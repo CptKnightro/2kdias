@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Plus, Trash, ArrowsLeftRight } from '@phosphor-icons/react'
+import { Plus, Trash, ArrowsLeftRight, Clock } from '@phosphor-icons/react'
 import { EmptyState } from '@/components/ui-bits'
 import {
   Field,
@@ -15,6 +15,7 @@ import {
   MiniButton,
   type Option,
 } from '@/components/commissioner/fields'
+import { timeUntil, shortDate, type DurationUnit } from '@/lib/trades'
 import { createTrade, updateTradeStatus, deleteTrade } from '../actions'
 
 export type PlayerLite = {
@@ -34,6 +35,8 @@ export type TradeRow = {
   cashAdjustment: number
   note: string
   createdAt: string
+  expiresAt: string | null
+  endsAt: string | null
 }
 
 const STATUS_OPTIONS: Option[] = [
@@ -42,7 +45,17 @@ const STATUS_OPTIONS: Option[] = [
   { label: 'Accepted', value: 'accepted' },
   { label: 'Rejected', value: 'rejected' },
   { label: 'Vetoed', value: 'vetoed' },
+  { label: 'Expired', value: 'expired' },
 ]
+
+const UNIT_OPTIONS: Option[] = [
+  { label: 'Days', value: 'days' },
+  { label: 'Weeks', value: 'weeks' },
+  { label: 'Months', value: 'months' },
+]
+const UNIT_MAX: Record<DurationUnit, number> = { days: 90, weeks: 12, months: 3 }
+const clampDuration = (value: number, unit: DurationUnit) =>
+  Math.min(UNIT_MAX[unit], Math.max(1, Math.floor(value) || 1))
 
 const STATUS_LABEL: Record<string, string> = Object.fromEntries(
   STATUS_OPTIONS.map((o) => [o.value, o.label]),
@@ -57,6 +70,8 @@ function statusClasses(status: string): string {
       return 'bg-destructive/15 text-destructive'
     case 'countered':
       return 'bg-amber-500/15 text-amber-400'
+    case 'expired':
+      return 'bg-foreground/10 text-muted-foreground'
     default:
       return 'bg-foreground/10 text-foreground/70'
   }
@@ -126,7 +141,12 @@ function TradeForm({
   const [cashAdjustment, setCashAdjustment] = React.useState(0)
   const [note, setNote] = React.useState('')
   const [status, setStatus] = React.useState('proposed')
+  const [durationValue, setDurationValue] = React.useState(3)
+  const [durationUnit, setDurationUnit] = React.useState<DurationUnit>('days')
   const [pending, start] = React.useTransition()
+
+  // Loan length matters while an offer is open OR when recording it as accepted.
+  const needsDuration = status === 'proposed' || status === 'countered' || status === 'accepted'
 
   const toOption = (p: PlayerLite): Option => ({ label: `${p.name} · ${p.ovr}`, value: p.id })
 
@@ -159,6 +179,8 @@ function TradeForm({
     setCashAdjustment(0)
     setNote('')
     setStatus('proposed')
+    setDurationValue(3)
+    setDurationUnit('days')
   }
 
   const submit = (e: React.FormEvent) => {
@@ -175,6 +197,8 @@ function TradeForm({
         cashAdjustment: String(cashAdjustment),
         note,
         status,
+        expiresInValue: clampDuration(durationValue, durationUnit),
+        expiresInUnit: durationUnit,
       })
       if (res.ok) {
         toast.success('Trade recorded')
@@ -242,6 +266,34 @@ function TradeForm({
         </Field>
       </div>
 
+      {needsDuration && (
+        <Field
+          label="Loan length"
+          hint="How long the players play for the other team (max 3 months)"
+        >
+          <div className="grid grid-cols-[1fr_1.4fr] gap-2">
+            <NumberInput
+              min={1}
+              max={UNIT_MAX[durationUnit]}
+              value={durationValue}
+              onChange={(e) =>
+                setDurationValue(clampDuration(Number(e.target.value), durationUnit))
+              }
+              className="text-center tabular-nums"
+            />
+            <Select
+              value={durationUnit}
+              onChange={(e) => {
+                const unit = e.target.value as DurationUnit
+                setDurationUnit(unit)
+                setDurationValue((v) => clampDuration(v, unit))
+              }}
+              options={UNIT_OPTIONS}
+            />
+          </div>
+        </Field>
+      )}
+
       <Field label="Note">
         <Textarea value={note} onChange={(e) => setNote(e.target.value)} />
       </Field>
@@ -277,6 +329,23 @@ function TradeListItem({ trade, onDone }: { trade: TradeRow; onDone: () => void 
   const offered = trade.offeredPlayerNames.length ? trade.offeredPlayerNames.join(', ') : '—'
   const requested = trade.requestedPlayerNames.length ? trade.requestedPlayerNames.join(', ') : '—'
 
+  // Timing line: open offers count down to expiry; active loans count down to revert.
+  const isOpen = trade.status === 'proposed' || trade.status === 'countered'
+  const isLoan = trade.status === 'accepted'
+  const timer = isOpen ? timeUntil(trade.expiresAt) : isLoan ? timeUntil(trade.endsAt) : null
+  const timerText =
+    isOpen && timer && !timer.past
+      ? `Offer expires in ${timer.short}`
+      : isLoan && timer && !timer.past
+        ? `On loan · players return in ${timer.short}${shortDate(trade.endsAt) ? ` (${shortDate(trade.endsAt)})` : ''}`
+        : trade.status === 'expired'
+          ? trade.endsAt
+            ? `Ended ${shortDate(trade.endsAt)} · players returned`
+            : trade.expiresAt
+              ? `Expired ${shortDate(trade.expiresAt)}`
+              : null
+          : null
+
   return (
     <li className="space-y-2 bg-foreground/[0.02] px-4 py-3">
       <div className="flex items-center gap-2">
@@ -289,7 +358,9 @@ function TradeListItem({ trade, onDone }: { trade: TradeRow; onDone: () => void 
             trade.status,
           )}`}
         >
-          {STATUS_LABEL[trade.status] ?? trade.status}
+          {trade.status === 'expired' && trade.endsAt
+            ? 'Ended'
+            : (STATUS_LABEL[trade.status] ?? trade.status)}
         </span>
       </div>
 
@@ -309,6 +380,16 @@ function TradeListItem({ trade, onDone }: { trade: TradeRow; onDone: () => void 
       )}
 
       {trade.note && <p className="text-xs text-muted-foreground">{trade.note}</p>}
+
+      {timerText && (
+        <p
+          className={`flex items-center gap-1.5 text-xs font-medium ${
+            isLoan ? 'text-emerald-400' : isOpen ? 'text-amber-400' : 'text-muted-foreground'
+          }`}
+        >
+          <Clock weight="bold" className="size-3.5" /> {timerText}
+        </p>
+      )}
 
       <div className="flex items-center gap-2">
         <div className="w-40">

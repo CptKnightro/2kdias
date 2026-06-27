@@ -1,4 +1,5 @@
 import { getPayloadClient } from '@/lib/payload'
+import { syncTradeStates } from '@/lib/trades-server'
 import { DbErrorToast } from '@/components/db-error-toast'
 import { PageSkeleton } from '@/components/skeletons'
 import { TradeManager, type TradeRow, type PlayerLite } from './trade-manager'
@@ -16,6 +17,7 @@ export default async function CommishTradesPage() {
   let trades: TradeRow[]
   try {
     const payload = await getPayloadClient()
+    await syncTradeStates(payload)
     const [fr, pl, tr] = await Promise.all([
       payload.find({ collection: 'franchises', limit: 200, depth: 0, sort: 'name' }),
       payload.find({ collection: 'players', limit: 500, depth: 0, sort: 'name' }),
@@ -41,6 +43,8 @@ export default async function CommishTradesPage() {
       cashAdjustment: t.cashAdjustment ?? 0,
       note: t.note ?? '',
       createdAt: t.createdAt,
+      expiresAt: t.expiresAt ?? null,
+      endsAt: t.endsAt ?? null,
     }))
   } catch {
     return (

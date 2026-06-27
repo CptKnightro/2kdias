@@ -15,11 +15,19 @@ import {
   Lightning,
   Stack,
   ClockCountdown,
+  SignIn,
+  UsersThree,
 } from '@phosphor-icons/react'
 import { PlayerCard, type PlayerCardData } from '@/components/player-card'
 import { GlassPanel } from '@/components/ui-bits'
 import { getSupabaseBrowser } from '@/lib/supabase/client'
-import { placeBid, setLot, setLotStatus, sellLot, endAuction } from '@/app/(frontend)/auction/actions'
+import {
+  placeBid,
+  setLot,
+  setLotStatus,
+  sellLot,
+  endAuction,
+} from '@/app/(frontend)/auction/actions'
 import { cn, formatCurrency } from '@/lib/utils'
 
 export type AuctionFranchise = {
@@ -89,7 +97,9 @@ export function AuctionRoom({
     if (supabase) {
       const channel = supabase
         .channel(`auction-${auction.id}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'bids' }, () => router.refresh())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'bids' }, () =>
+          router.refresh(),
+        )
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'auctions' }, () =>
           router.refresh(),
         )
@@ -102,8 +112,6 @@ export function AuctionRoom({
     return () => clearInterval(t)
   }, [auction.id, router])
 
-  const myFranchise = franchises.find((f) => f.id === me?.franchiseId)
-  const canBid = me && (me.role === 'commissioner' || me.franchiseId)
   const isCommish = me?.role === 'commissioner'
   const lotOpen = ['open', 'going1', 'going2'].includes(auction.lotStatus)
   const blockFree = !lotOpen // idle / sold / unsold → ready for the next lot
@@ -114,14 +122,41 @@ export function AuctionRoom({
   const upNext = pool.slice(0, ON_DECK)
   const nextUpId = upNext[0]?.id ?? null
 
+  // ── Bidder identity (login-free) ────────────────────────────────────────
+  // A signed-in owner is pinned to their own team. Everyone else taps "Sign in"
+  // and picks which team they're bidding for; the choice is saved per-auction
+  // so a refresh (or a realtime re-render) keeps their seat.
+  const linkedFid = me?.franchiseId ?? null
+  const storageKey = `2kdais:auction:${auction.id}:team`
+  const [pickedFid, setPickedFid] = React.useState<string | null>(null)
+  React.useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(storageKey)
+      if (saved) setPickedFid(saved)
+    } catch {
+      /* localStorage unavailable — fall back to in-memory pick */
+    }
+  }, [storageKey])
+  const choose = (fid: string | null) => {
+    setPickedFid(fid)
+    try {
+      if (fid) window.localStorage.setItem(storageKey, fid)
+      else window.localStorage.removeItem(storageKey)
+    } catch {
+      /* ignore */
+    }
+  }
+  // Only honor a pick that still maps to a live team.
+  const actingFranchise = franchises.find((f) => f.id === (linkedFid ?? pickedFid)) ?? null
+  const effectiveFid = actingFranchise?.id ?? null
+
   const bid = (amount: number) => {
-    const franchiseId = me?.franchiseId ?? myFranchise?.id
-    if (!franchiseId) {
-      toast.error('No franchise linked to your account.')
+    if (!effectiveFid) {
+      toast.error('Pick a team to bid for first.')
       return
     }
     startTransition(async () => {
-      const res = await placeBid({ auctionId: auction.id, franchiseId, amount })
+      const res = await placeBid({ auctionId: auction.id, franchiseId: effectiveFid, amount })
       if (res.ok) toast.success(`Bid ${money(amount)} placed`)
       else toast.error(res.error || 'Bid failed')
       router.refresh()
@@ -261,7 +296,9 @@ export function AuctionRoom({
                   </span>
 
                   <div className="mt-4">
-                    <p className="text-xs uppercase tracking-wider text-muted-foreground">Current Bid</p>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                      Current Bid
+                    </p>
                     <div className="relative h-[4.2rem] overflow-hidden">
                       <AnimatePresence mode="popLayout" initial={false}>
                         <motion.p
@@ -279,7 +316,11 @@ export function AuctionRoom({
                     <p className="mt-1 text-sm text-muted-foreground">
                       {auction.highFranchiseName ? (
                         <>
-                          <Trophy weight="fill" size={13} className="mb-0.5 mr-1 inline text-warning" />
+                          <Trophy
+                            weight="fill"
+                            size={13}
+                            className="mb-0.5 mr-1 inline text-warning"
+                          />
                           {auction.highFranchiseName}
                         </>
                       ) : (
@@ -288,25 +329,49 @@ export function AuctionRoom({
                     </p>
                   </div>
 
-                  {canBid && lotOpen && (
-                    <div className="mt-5 flex flex-wrap justify-center gap-2 sm:justify-start">
-                      {[nextMin, nextMin + 5, nextMin + 10].map((amt, i) => (
-                        <motion.button
-                          key={i}
-                          whileTap={reduce ? undefined : { scale: 0.94 }}
-                          disabled={pending}
-                          onClick={() => bid(amt)}
-                          className="skeuo-btn rounded-xl px-5 py-3 font-display text-lg font-bold disabled:opacity-50"
-                        >
-                          {money(amt)}
-                        </motion.button>
-                      ))}
+                  {effectiveFid ? (
+                    <div className="mt-5 space-y-3">
+                      {lotOpen ? (
+                        <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
+                          {[nextMin, nextMin + 5, nextMin + 10].map((amt, i) => (
+                            <motion.button
+                              key={i}
+                              whileTap={reduce ? undefined : { scale: 0.94 }}
+                              disabled={pending}
+                              onClick={() => bid(amt)}
+                              className="skeuo-btn rounded-xl px-5 py-3 font-display text-lg font-bold disabled:opacity-50"
+                            >
+                              {money(amt)}
+                            </motion.button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Waiting for the next lot to open…
+                        </p>
+                      )}
+                      {!linkedFid && (
+                        <p className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-muted-foreground sm:justify-start">
+                          Bidding as
+                          <span className="inline-flex items-center gap-1 font-semibold text-foreground">
+                            <span
+                              className="h-2 w-2 rounded-full"
+                              style={{ background: actingFranchise?.color || '#DF2604' }}
+                            />
+                            {actingFranchise?.name}
+                          </span>
+                          ·
+                          <button
+                            onClick={() => choose(null)}
+                            className="font-semibold text-primary underline-offset-2 hover:underline"
+                          >
+                            Switch team
+                          </button>
+                        </p>
+                      )}
                     </div>
-                  )}
-                  {!me && (
-                    <p className="mt-5 text-sm text-muted-foreground">
-                      Sign in to bid on your team&rsquo;s behalf.
-                    </p>
+                  ) : (
+                    <SignInToBid franchises={franchises} onPick={choose} />
                   )}
                 </div>
               </motion.div>
@@ -384,7 +449,8 @@ export function AuctionRoom({
               {canEnd && (
                 <button
                   onClick={() => {
-                    if (!confirm('End this auction? You can then start a new Main or Mid auction.')) return
+                    if (!confirm('End this auction? You can then start a new Main or Mid auction.'))
+                      return
                     commish(() => endAuction(auction.id), 'Auction ended')
                   }}
                   disabled={pending}
@@ -407,7 +473,7 @@ export function AuctionRoom({
               {franchises.map((f) => {
                 const remaining = f.purseTotal - f.purseSpent
                 const pct = f.purseTotal > 0 ? Math.max(0, (remaining / f.purseTotal) * 100) : 0
-                const isMe = f.id === me?.franchiseId
+                const isMe = f.id === effectiveFid
                 const isHigh = f.id === auction.highFranchiseId
                 return (
                   <div
@@ -492,7 +558,9 @@ export function AuctionRoom({
                 >
                   <span className="font-display text-lg font-black text-primary">{h.ovr}</span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold leading-tight">{h.name}</span>
+                    <span className="block truncate text-sm font-semibold leading-tight">
+                      {h.name}
+                    </span>
                     {h.result === 'sold' ? (
                       <span className="flex items-center gap-1 truncate text-xs text-muted-foreground">
                         <span
@@ -561,9 +629,7 @@ function CommishPool({
   autoLeft: number | null
 }) {
   const [q, setQ] = React.useState('')
-  const filtered = q
-    ? pool.filter((p) => p.name.toLowerCase().includes(q.toLowerCase()))
-    : pool
+  const filtered = q ? pool.filter((p) => p.name.toLowerCase().includes(q.toLowerCase())) : pool
 
   return (
     <div className="space-y-2">
@@ -595,14 +661,14 @@ function CommishPool({
                   disabled={disabled}
                   className={cn(
                     'flex w-full items-center gap-2.5 rounded-xl p-2.5 text-left transition-colors disabled:opacity-40',
-                    deck
-                      ? 'skeuo-btn ring-1 ring-primary/40'
-                      : 'skeuo-inset hover:bg-foreground/5',
+                    deck ? 'skeuo-btn ring-1 ring-primary/40' : 'skeuo-inset hover:bg-foreground/5',
                   )}
                 >
                   <span className="font-display text-lg font-black text-primary">{p.ovr}</span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold leading-tight">{p.name}</span>
+                    <span className="block truncate text-sm font-semibold leading-tight">
+                      {p.name}
+                    </span>
                     <span className="text-xs text-muted-foreground">{p.position}</span>
                   </span>
                   {deck && (
@@ -641,10 +707,69 @@ function UpNextList({ players }: { players: PoolPlayer[] }) {
             <span className="text-xs text-muted-foreground">{p.position}</span>
           </span>
           {i === 0 && (
-            <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Next</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+              Next
+            </span>
           )}
         </li>
       ))}
     </ul>
+  )
+}
+
+/**
+ * Login-free bidder identity. Tap "Sign in" to reveal the teams, then pick the
+ * one you're representing — that team is whose purse your bids draw from.
+ */
+function SignInToBid({
+  franchises,
+  onPick,
+}: {
+  franchises: AuctionFranchise[]
+  onPick: (id: string) => void
+}) {
+  const [open, setOpen] = React.useState(false)
+
+  if (!open) {
+    return (
+      <div className="mt-5">
+        <button
+          onClick={() => setOpen(true)}
+          className="skeuo-btn inline-flex items-center gap-2 rounded-xl px-5 py-3 font-display text-base font-bold"
+        >
+          <SignIn weight="bold" size={18} /> Sign in to bid
+        </button>
+        <p className="mt-2 text-xs text-muted-foreground">Pick your team to start bidding.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-5 space-y-2.5">
+      <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        <UsersThree weight="bold" size={14} className="text-primary" /> Which team are you?
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {franchises.map((f) => (
+          <button
+            key={f.id}
+            onClick={() => onPick(f.id)}
+            className="skeuo-btn flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold"
+          >
+            <span
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{ background: f.color || '#DF2604' }}
+            />
+            {f.name}
+          </button>
+        ))}
+      </div>
+      <button
+        onClick={() => setOpen(false)}
+        className="text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+      >
+        Cancel
+      </button>
+    </div>
   )
 }

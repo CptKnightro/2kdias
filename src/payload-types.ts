@@ -358,7 +358,19 @@ export interface Trade {
    */
   cashAdjustment?: number | null;
   note?: string | null;
-  status?: ('proposed' | 'countered' | 'accepted' | 'rejected' | 'vetoed') | null;
+  status?: ('proposed' | 'countered' | 'accepted' | 'rejected' | 'vetoed' | 'expired') | null;
+  /**
+   * Accept-by deadline — auto-expires the offer if not settled (max 3 months out).
+   */
+  expiresAt?: string | null;
+  /**
+   * Loan start — set when the trade is accepted. Players move to the other team.
+   */
+  startsAt?: string | null;
+  /**
+   * Loan end — players revert to their original teams once this passes.
+   */
+  endsAt?: string | null;
   proposedBy?: (number | null) | User;
   updatedAt: string;
   createdAt: string;
@@ -701,6 +713,9 @@ export interface TradesSelect<T extends boolean = true> {
   cashAdjustment?: T;
   note?: T;
   status?: T;
+  expiresAt?: T;
+  startsAt?: T;
+  endsAt?: T;
   proposedBy?: T;
   updatedAt?: T;
   createdAt?: T;

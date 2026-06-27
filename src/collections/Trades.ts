@@ -67,8 +67,38 @@ export const Trades: CollectionConfig = {
         { label: 'Accepted', value: 'accepted' },
         { label: 'Rejected', value: 'rejected' },
         { label: 'Vetoed', value: 'vetoed' },
+        // Auto-set once `expiresAt` passes on a still-open offer (see src/lib/trades.ts).
+        { label: 'Expired', value: 'expired' },
       ],
       admin: { position: 'sidebar' },
+    },
+    {
+      name: 'expiresAt',
+      type: 'date',
+      admin: {
+        position: 'sidebar',
+        description:
+          'Accept-by deadline — auto-expires the offer if not settled (max 3 months out).',
+        date: { pickerAppearance: 'dayAndTime' },
+      },
+    },
+    {
+      name: 'startsAt',
+      type: 'date',
+      admin: {
+        position: 'sidebar',
+        description: 'Loan start — set when the trade is accepted. Players move to the other team.',
+        date: { pickerAppearance: 'dayAndTime' },
+      },
+    },
+    {
+      name: 'endsAt',
+      type: 'date',
+      admin: {
+        position: 'sidebar',
+        description: 'Loan end — players revert to their original teams once this passes.',
+        date: { pickerAppearance: 'dayAndTime' },
+      },
     },
     {
       name: 'proposedBy',
@@ -76,7 +106,9 @@ export const Trades: CollectionConfig = {
       relationTo: 'users',
       admin: { position: 'sidebar', readOnly: true },
       hooks: {
-        beforeChange: [({ req, value, operation }) => (operation === 'create' ? req.user?.id : value)],
+        beforeChange: [
+          ({ req, value, operation }) => (operation === 'create' ? req.user?.id : value),
+        ],
       },
     },
   ],

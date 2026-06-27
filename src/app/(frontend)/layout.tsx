@@ -33,8 +33,15 @@ export const metadata: Metadata = {
   openGraph: {
     title: '2KDais — NBA 2K League',
     description: 'Live auction, trades & transfers, and tournaments.',
-    images: ['/og-image.png'],
+    siteName: '2KDais',
     type: 'website',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: '2KDais — NBA 2K League' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '2KDais — NBA 2K League',
+    description: 'Live auction, trades & transfers, and tournaments.',
+    images: ['/og-image.png'],
   },
 }
 
