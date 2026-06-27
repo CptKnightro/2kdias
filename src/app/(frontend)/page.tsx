@@ -7,6 +7,7 @@ import { DashboardView } from '@/components/home/dashboard-view'
 import { StatusView, type ActivityType, type StatusData } from '@/components/home/status-view'
 import { LogMatchView } from '@/components/home/log-match-view'
 import type { TeamStat } from '@/components/home/match-stats'
+import type { RecentMatch } from '@/components/home/recent-matches'
 import type { Option } from '@/components/commissioner/fields'
 
 export const revalidate = 3600 // cached; purged on-demand via Payload hooks (src/lib/revalidate.ts)
@@ -135,6 +136,18 @@ export default async function HomePage() {
         })),
         franchiseOptions: franchiseRows.map((f): Option => ({ label: f.name, value: String(f.id) })),
         stats: buildStats(franchiseRows, matches.docs),
+        recent: matches.docs.slice(0, 10).map(
+          (m): RecentMatch => ({
+            id: m.id as number,
+            home: relName(m.homeFranchise) ?? '—',
+            away: relName(m.awayFranchise) ?? '—',
+            homeColor: relColor(m.homeFranchise),
+            awayColor: relColor(m.awayFranchise),
+            homeScore: m.homeScore ?? null,
+            awayScore: m.awayScore ?? null,
+            date: fmtDate(m.playedAt),
+          }),
+        ),
       }
     },
     {
@@ -148,6 +161,7 @@ export default async function HomePage() {
       trades: [] as StatusData['trades'],
       franchiseOptions: [] as Option[],
       stats: [] as TeamStat[],
+      recent: [] as RecentMatch[],
     },
   )
 
@@ -173,7 +187,7 @@ export default async function HomePage() {
         />
       }
       status={<StatusView auctions={data.auctions} activity={data.activity} trades={data.trades} />}
-      log={<LogMatchView franchiseOptions={data.franchiseOptions} />}
+      log={<LogMatchView franchiseOptions={data.franchiseOptions} recent={data.recent} />}
     />
   )
 }

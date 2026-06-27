@@ -79,7 +79,8 @@ export default async function StandingsPage() {
       <PageHeader title="Standings" icon={ListNumbers} subtitle="League table" />
       {data.length > 0 ? (
         <GlassPanel className="overflow-hidden">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[22rem] text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <th className="px-4 py-3">#</th>
@@ -124,6 +125,7 @@ export default async function StandingsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </GlassPanel>
       ) : (
         <EmptyState

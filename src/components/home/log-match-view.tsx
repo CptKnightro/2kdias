@@ -7,8 +7,15 @@ import { Basketball, Trophy } from '@phosphor-icons/react'
 import { GlassPanel } from '@/components/ui-bits'
 import { Field, Select, NumberInput, SubmitButton, MiniButton, type Option } from '@/components/commissioner/fields'
 import { logMatch } from '@/app/(frontend)/matches/actions'
+import { RecentMatches, type RecentMatch } from '@/components/home/recent-matches'
 
-export function LogMatchView({ franchiseOptions }: { franchiseOptions: Option[] }) {
+export function LogMatchView({
+  franchiseOptions,
+  recent,
+}: {
+  franchiseOptions: Option[]
+  recent: RecentMatch[]
+}) {
   const router = useRouter()
   const [homeFranchise, setHomeFranchise] = React.useState('')
   const [awayFranchise, setAwayFranchise] = React.useState('')
@@ -96,6 +103,8 @@ export function LogMatchView({ franchiseOptions }: { franchiseOptions: Option[] 
           </div>
         </form>
       </GlassPanel>
+
+      <RecentMatches matches={recent} />
     </div>
   )
 }

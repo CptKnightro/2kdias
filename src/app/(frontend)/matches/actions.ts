@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { getPayloadClient } from '@/lib/payload'
+import { getCurrentUser, requireCommissioner } from '@/lib/auth'
 import type { Match } from '@/payload-types'
 
 export type Result = { ok: boolean; error?: string; id?: number }
@@ -10,6 +11,16 @@ const int = (v: unknown): number | null => {
   if (v === '' || v == null) return null
   const x = Math.round(Number(v))
   return Number.isFinite(x) ? x : null
+}
+
+function purge() {
+  for (const p of ['/', '/matches', '/standings']) {
+    try {
+      revalidatePath(p)
+    } catch {
+      /* outside request scope — ignore */
+    }
+  }
 }
 
 /**
@@ -53,14 +64,32 @@ export async function logMatch(input: {
       },
     })
 
-    for (const p of ['/', '/matches', '/standings']) {
-      try {
-        revalidatePath(p)
-      } catch {
-        /* outside request scope — ignore */
-      }
-    }
+    purge()
     return { ok: true, id: doc.id as number }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+/** Whether the current viewer is a signed-in commissioner — drives the delete UI. */
+export async function isCommissionerViewer(): Promise<boolean> {
+  const user = await getCurrentUser()
+  return user?.role === 'commissioner'
+}
+
+/**
+ * Delete a logged match. Commissioner-only — enforced server-side via
+ * requireCommissioner(), so a normal user can't remove results even by
+ * calling this directly. Normal users can only log; deletion is the
+ * commissioner's call.
+ */
+export async function deleteMatch(id: number): Promise<Result> {
+  try {
+    await requireCommissioner()
+    const payload = await getPayloadClient()
+    await payload.delete({ collection: 'matches', id })
+    purge()
+    return { ok: true, id }
   } catch (e) {
     return { ok: false, error: (e as Error).message }
   }

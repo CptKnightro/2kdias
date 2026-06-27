@@ -134,7 +134,8 @@ export function MatchStats({ stats }: { stats: TeamStat[] }) {
       </div>
 
       <GlassPanel className="overflow-hidden p-0">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[24rem] text-sm">
           <thead>
             <tr className="border-b border-border text-left text-[11px] uppercase tracking-wider text-muted-foreground">
               <th className="px-4 py-2.5 font-semibold">Team</th>
@@ -178,6 +179,7 @@ export function MatchStats({ stats }: { stats: TeamStat[] }) {
             })}
           </tbody>
         </table>
+        </div>
       </GlassPanel>
     </section>
   )

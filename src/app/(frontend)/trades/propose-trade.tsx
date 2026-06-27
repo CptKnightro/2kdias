@@ -3,9 +3,10 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Plus, ArrowRight } from '@phosphor-icons/react'
+import { Plus, ArrowRight, X } from '@phosphor-icons/react'
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -33,20 +34,33 @@ export function ProposeTrade({
         <button className="skeuo-btn rounded-lg px-4 py-2 text-sm font-semibold">Propose Trade</button>
       </DialogTrigger>
       {/* Transparent shell — the inner .glass-strong panel carries the frosted look,
-          since `bg-*` utilities would otherwise override the component-layer glass. */}
-      <DialogContent className="border-0 !bg-transparent p-0 shadow-none sm:max-w-xl">
-        <div className="glass-strong rounded-2xl p-6">
-          <DialogHeader className="mb-4">
+          since `bg-*` utilities would otherwise override the component-layer glass.
+          Capped to the viewport with a pinned header + scrollable body so the form
+          stays reachable on short / mobile screens. */}
+      <DialogContent
+        showCloseButton={false}
+        className="max-h-none overflow-y-visible border-0 !bg-transparent p-0 shadow-none sm:max-w-xl"
+      >
+        <div className="glass-strong flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-2xl">
+          <DialogHeader className="flex shrink-0 flex-row items-center justify-between gap-2 border-b border-border/60 px-5 py-4">
             <DialogTitle className="font-display text-lg font-black uppercase tracking-tight">
               Propose a trade
             </DialogTitle>
+            <DialogClose
+              aria-label="Close"
+              className="rounded-lg p-1 text-foreground/60 transition-colors hover:text-foreground"
+            >
+              <X weight="bold" className="size-5" />
+            </DialogClose>
           </DialogHeader>
           {/* Radix only mounts content while open, so the form resets between opens. */}
-          <ProposeForm
-            franchiseOptions={franchiseOptions}
-            players={players}
-            onDone={() => setOpen(false)}
-          />
+          <div className="min-h-0 overflow-y-auto overscroll-contain px-5 py-5">
+            <ProposeForm
+              franchiseOptions={franchiseOptions}
+              players={players}
+              onDone={() => setOpen(false)}
+            />
+          </div>
         </div>
       </DialogContent>
     </Dialog>

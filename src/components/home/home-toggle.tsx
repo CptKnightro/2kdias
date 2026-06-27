@@ -36,7 +36,7 @@ export function HomeToggle({
         <div
           role="tablist"
           aria-label="Home view"
-          className="skeuo-inset inline-flex gap-1 rounded-full p-1"
+          className="skeuo-inset flex w-full max-w-md gap-1 rounded-full p-1 sm:inline-flex sm:w-auto sm:max-w-none"
         >
           {TABS.map(({ key, label, icon: Icon }) => {
             const active = view === key
@@ -47,13 +47,13 @@ export function HomeToggle({
                 aria-selected={active}
                 onClick={() => setView(key)}
                 className={cn(
-                  'flex cursor-pointer items-center gap-1.5 rounded-full px-5 py-2 text-sm font-bold uppercase tracking-wide transition-all',
+                  'flex flex-1 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-2 text-xs font-bold uppercase tracking-wide transition-all sm:flex-none sm:px-5 sm:text-sm',
                   active
                     ? 'skeuo-btn text-foreground'
                     : 'text-foreground/55 hover:text-foreground',
                 )}
               >
-                <Icon weight="bold" size={16} />
+                <Icon weight="bold" size={16} className="shrink-0" />
                 {label}
               </button>
             )
