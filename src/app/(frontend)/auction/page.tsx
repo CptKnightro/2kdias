@@ -1,6 +1,6 @@
 import { headers as nextHeaders } from 'next/headers'
 import { Gavel } from '@phosphor-icons/react/dist/ssr'
-import { getPayloadClient } from '@/lib/payload'
+import { getPayloadClient, withDbRetry } from '@/lib/payload'
 import { PageHeader, EmptyState } from '@/components/ui-bits'
 import { DbErrorToast } from '@/components/db-error-toast'
 import { PageSkeleton } from '@/components/skeletons'
@@ -19,6 +19,7 @@ export const metadata = { title: 'Auction Room' }
 
 export default async function AuctionPage() {
   try {
+    return await withDbRetry(async () => {
     const payload = await getPayloadClient()
     const headers = await nextHeaders()
     const { user } = await payload.auth({ headers })
@@ -222,7 +223,9 @@ export default async function AuctionPage() {
         <AuctionRoom auction={view} franchises={franchises} me={me} canEnd={!!isCommish} />
       </div>
     )
-  } catch {
+    })
+  } catch (err) {
+    console.error('[auction] render failed', err)
     return (
       <>
         <DbErrorToast />
