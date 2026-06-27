@@ -319,6 +319,12 @@ export async function startMainAuction(auctionId: string): Promise<Result> {
       data: { purseSpent: 0 },
     })
     const queue = await freeAgentIds(payload)
+    // Fresh pool: clear any stale sold/unsold flags so the board starts clean.
+    await payload.update({
+      collection: 'players',
+      where: { id: { in: queue } },
+      data: { status: 'available', soldPrice: null },
+    })
     await payload.update({
       collection: 'auctions',
       id: Number(auctionId),
@@ -350,6 +356,12 @@ export async function createMidAuction(input: { title: string }): Promise<Result
       where: { status: { equals: 'live' } },
       data: { status: 'ended', lotStatus: 'idle', currentPlayer: null },
     })
+    // Fresh pool: clear any stale sold/unsold flags so the board starts clean.
+    await payload.update({
+      collection: 'players',
+      where: { id: { in: queue } },
+      data: { status: 'available', soldPrice: null },
+    })
     await payload.create({
       collection: 'auctions',
       data: { title: input.title || 'Mid Auction', kind: 'mid', status: 'live', queue, lotStatus: 'idle' },
@@ -377,6 +389,37 @@ export async function endAuction(auctionId: string): Promise<Result> {
       collection: 'auctions',
       id: Number(auctionId),
       data: { status: 'ended', lotStatus: 'idle', currentPlayer: null, retentionOpen: false },
+      user,
+    })
+    revalidatePath('/auction')
+    revalidatePath('/')
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+/**
+ * Commissioner: clear a finished auction's recap. Empties the queue (which the
+ * /auction page derives its results from) so the board resets to empty. Player
+ * roster assignments and purses are untouched — only the display is wiped.
+ */
+export async function clearAuction(auctionId: string): Promise<Result> {
+  const { payload, user } = await getUser()
+  if (!isCommissioner(user)) return { ok: false, error: 'Commissioner only.' }
+  try {
+    await payload.update({
+      collection: 'auctions',
+      id: Number(auctionId),
+      data: {
+        status: 'ended',
+        lotStatus: 'idle',
+        currentPlayer: null,
+        currentHighFranchise: null,
+        currentHighBid: null,
+        retentionOpen: false,
+        queue: [],
+      },
       user,
     })
     revalidatePath('/auction')

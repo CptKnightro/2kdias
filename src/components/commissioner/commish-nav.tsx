@@ -9,11 +9,13 @@ import {
   Trophy,
   ArrowsLeftRight,
   GearSix,
+  Gavel,
 } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
 const TABS = [
   { href: '/commissioner', label: 'Dashboard', icon: SquaresFour, exact: true },
+  { href: '/commissioner/auction', label: 'Auction', icon: Gavel },
   { href: '/commissioner/teams', label: 'Teams', icon: UsersIcon },
   { href: '/commissioner/players', label: 'Players', icon: IdentificationCard },
   { href: '/commissioner/tournaments', label: 'Tournaments', icon: Trophy },
