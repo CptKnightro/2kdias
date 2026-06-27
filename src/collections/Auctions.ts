@@ -17,6 +17,19 @@ export const Auctions: CollectionConfig = {
   fields: [
     { name: 'title', type: 'text', required: true, defaultValue: 'Season Auction' },
     {
+      name: 'kind',
+      type: 'select',
+      defaultValue: 'mid',
+      options: [
+        { label: 'Main auction', value: 'main' },
+        { label: 'Mid auction', value: 'mid' },
+      ],
+      admin: {
+        position: 'sidebar',
+        description: 'Main = league reset (retain 3, rest pooled). Mid = auction the free-agent pool.',
+      },
+    },
+    {
       name: 'status',
       type: 'select',
       defaultValue: 'scheduled',
@@ -26,6 +39,33 @@ export const Auctions: CollectionConfig = {
         { label: 'Ended', value: 'ended' },
       ],
       admin: { position: 'sidebar' },
+    },
+    // ── main-auction retention phase ────────────────────────────
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'retentionOpen',
+          type: 'checkbox',
+          defaultValue: false,
+          admin: { width: '33%', description: 'Retention window is open (main only).' },
+        },
+        {
+          name: 'retentionLimit',
+          type: 'number',
+          defaultValue: 3,
+          admin: { width: '33%', description: 'Players each team keeps.' },
+        },
+        {
+          name: 'retentionDeadline',
+          type: 'date',
+          admin: {
+            width: '34%',
+            date: { pickerAppearance: 'dayAndTime' },
+            description: 'Target cutoff for retentions.',
+          },
+        },
+      ],
     },
     {
       type: 'collapsible',

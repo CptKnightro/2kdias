@@ -255,6 +255,10 @@ export interface Player {
    * Final hammer price.
    */
   soldPrice?: number | null;
+  /**
+   * Kept by its team for a main auction (set during retention).
+   */
+  retained?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -265,7 +269,23 @@ export interface Player {
 export interface Auction {
   id: number;
   title: string;
+  /**
+   * Main = league reset (retain 3, rest pooled). Mid = auction the free-agent pool.
+   */
+  kind?: ('main' | 'mid') | null;
   status?: ('scheduled' | 'live' | 'ended') | null;
+  /**
+   * Retention window is open (main only).
+   */
+  retentionOpen?: boolean | null;
+  /**
+   * Players each team keeps.
+   */
+  retentionLimit?: number | null;
+  /**
+   * Target cutoff for retentions.
+   */
+  retentionDeadline?: string | null;
   /**
    * Max players per team.
    */
@@ -319,11 +339,11 @@ export interface Trade {
   fromFranchise: number | Franchise;
   toFranchise: number | Franchise;
   /**
-   * Players the proposer gives up.
+   * Players the proposer gives up (max 3).
    */
   offeredPlayers?: (number | Player)[] | null;
   /**
-   * Players the proposer wants.
+   * Players the proposer wants (max 3).
    */
   requestedPlayers?: (number | Player)[] | null;
   /**
@@ -617,6 +637,7 @@ export interface PlayersSelect<T extends boolean = true> {
   status?: T;
   franchise?: T;
   soldPrice?: T;
+  retained?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -626,7 +647,11 @@ export interface PlayersSelect<T extends boolean = true> {
  */
 export interface AuctionsSelect<T extends boolean = true> {
   title?: T;
+  kind?: T;
   status?: T;
+  retentionOpen?: T;
+  retentionLimit?: T;
+  retentionDeadline?: T;
   squadCap?: T;
   minIncrement?: T;
   timerSeconds?: T;

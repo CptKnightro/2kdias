@@ -14,7 +14,7 @@ import {
 import { PlayerCard, type PlayerCardData } from '@/components/player-card'
 import { GlassPanel } from '@/components/ui-bits'
 import { getSupabaseBrowser } from '@/lib/supabase/client'
-import { placeBid, setLot, setLotStatus, sellLot } from '@/app/(frontend)/auction/actions'
+import { placeBid, setLot, setLotStatus, sellLot, endAuction } from '@/app/(frontend)/auction/actions'
 import { cn, formatCurrency } from '@/lib/utils'
 
 export type AuctionFranchise = {
@@ -51,10 +51,12 @@ export function AuctionRoom({
   auction,
   franchises,
   me,
+  canEnd,
 }: {
   auction: AuctionView
   franchises: AuctionFranchise[]
   me: Me
+  canEnd?: boolean
 }) {
   const router = useRouter()
   const [pending, startTransition] = React.useTransition()
@@ -230,6 +232,18 @@ export function AuctionRoom({
               >
                 <CheckCircle weight="bold" size={15} /> Sell / Hammer
               </button>
+              {canEnd && (
+                <button
+                  onClick={() => {
+                    if (!confirm('End this auction? You can then start a new Main or Mid auction.')) return
+                    commish(() => endAuction(auction.id), 'Auction ended')
+                  }}
+                  disabled={pending}
+                  className="ml-auto rounded-lg px-3 py-2 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-40"
+                >
+                  <XCircle weight="bold" size={15} className="mr-1 inline" /> End auction
+                </button>
+              )}
             </div>
             {auction.queue.length > 0 && (
               <div>

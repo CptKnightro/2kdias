@@ -2,6 +2,7 @@
 
 import { headers as nextHeaders } from 'next/headers'
 import { revalidatePath } from 'next/cache'
+import type { Payload } from 'payload'
 import { getPayloadClient } from '@/lib/payload'
 import { isCommissioner } from '@/access/roles'
 
@@ -151,6 +152,235 @@ export async function sellLot(auctionId: string): Promise<Result> {
       overrideAccess: true,
     })
     revalidatePath('/auction')
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Main / Mid auction lifecycle
+// ════════════════════════════════════════════════════════════════════════════
+
+/** All free-agent players (not on any team) — the auction pool. */
+async function freeAgentIds(payload: Payload): Promise<number[]> {
+  const res = await payload.find({
+    collection: 'players',
+    where: { franchise: { exists: false } },
+    limit: 2000,
+    depth: 0,
+  })
+  return res.docs.map((p) => p.id as number)
+}
+
+/**
+ * Commissioner: open a MAIN auction. Every team will release all but the
+ * retained limit; the live auction can't start until they have. Opens the
+ * retention window and wipes any prior retention flags.
+ */
+export async function createMainAuction(input: {
+  title: string
+  retentionDeadline?: string
+}): Promise<Result> {
+  const { payload, user } = await getUser()
+  if (!isCommissioner(user)) return { ok: false, error: 'Commissioner only.' }
+  try {
+    await payload.update({
+      collection: 'auctions',
+      where: { status: { equals: 'live' } },
+      data: { status: 'ended', lotStatus: 'idle', currentPlayer: null },
+    })
+    await payload.update({
+      collection: 'players',
+      where: { retained: { equals: true } },
+      data: { retained: false },
+    })
+    await payload.create({
+      collection: 'auctions',
+      data: {
+        title: input.title || 'Main Auction',
+        kind: 'main',
+        status: 'scheduled',
+        retentionOpen: true,
+        retentionLimit: 3,
+        retentionDeadline: input.retentionDeadline || null,
+      },
+      user,
+    })
+    await payload.create({
+      collection: 'activity',
+      data: { type: 'auction', message: 'Main auction opened — every team must retain 3 players.' },
+      overrideAccess: true,
+    })
+    revalidatePath('/auction')
+    revalidatePath('/')
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+/**
+ * Owner (or commissioner on a team's behalf): set the players a team keeps for a
+ * main auction. Replaces that team's retention selection (≤ the limit).
+ */
+export async function setRetention(input: {
+  auctionId: string
+  playerIds: string[]
+  franchiseId?: string
+}): Promise<Result> {
+  const { payload, user } = await getUser()
+  if (!user) return { ok: false, error: 'Sign in to retain players.' }
+  try {
+    const auction = await payload.findByID({
+      collection: 'auctions',
+      id: Number(input.auctionId),
+      depth: 0,
+    })
+    if (auction.kind !== 'main' || !auction.retentionOpen)
+      return { ok: false, error: 'Retention is not open.' }
+    const limit = auction.retentionLimit ?? 3
+
+    let fid: number | null = null
+    if (isCommissioner(user)) {
+      fid = input.franchiseId ? Number(input.franchiseId) : null
+    } else {
+      fid = typeof user.franchise === 'object' ? (user.franchise?.id ?? null) : (user.franchise ?? null)
+      if (input.franchiseId && Number(input.franchiseId) !== fid)
+        return { ok: false, error: 'You can only retain your own team.' }
+    }
+    if (!fid) return { ok: false, error: 'No team linked to retain for.' }
+
+    const ids = input.playerIds.map(Number).filter((x) => Number.isFinite(x))
+    if (ids.length > limit) return { ok: false, error: `Retain at most ${limit} players.` }
+
+    if (ids.length) {
+      const owned = await payload.find({
+        collection: 'players',
+        where: { and: [{ id: { in: ids } }, { franchise: { equals: fid } }] },
+        limit: ids.length,
+        depth: 0,
+      })
+      if (owned.docs.length !== ids.length)
+        return { ok: false, error: 'Those players are not on your team.' }
+    }
+
+    await payload.update({
+      collection: 'players',
+      where: { franchise: { equals: fid } },
+      data: { retained: false },
+    })
+    if (ids.length) {
+      await payload.update({
+        collection: 'players',
+        where: { id: { in: ids } },
+        data: { retained: true },
+      })
+    }
+    revalidatePath('/auction')
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+/**
+ * Commissioner: start the live MAIN auction. Gated — every team must have
+ * retained exactly the limit. Releases all non-retained players, fully resets
+ * purses (retained kept free), and pools the free agents into the queue.
+ */
+export async function startMainAuction(auctionId: string): Promise<Result> {
+  const { payload, user } = await getUser()
+  if (!isCommissioner(user)) return { ok: false, error: 'Commissioner only.' }
+  try {
+    const auction = await payload.findByID({ collection: 'auctions', id: Number(auctionId), depth: 0 })
+    if (auction.kind !== 'main') return { ok: false, error: 'Not a main auction.' }
+    const limit = auction.retentionLimit ?? 3
+
+    const franchises = await payload.find({ collection: 'franchises', limit: 100, depth: 0 })
+    const notReady: string[] = []
+    for (const f of franchises.docs) {
+      const c = await payload.count({
+        collection: 'players',
+        where: { and: [{ franchise: { equals: f.id } }, { retained: { equals: true } }] },
+      })
+      if (c.totalDocs !== limit) notReady.push(`${f.name} (${c.totalDocs}/${limit})`)
+    }
+    if (notReady.length) return { ok: false, error: `Teams not ready: ${notReady.join(', ')}.` }
+
+    await payload.update({
+      collection: 'players',
+      where: { and: [{ franchise: { exists: true } }, { retained: { equals: false } }] },
+      data: { franchise: null, status: 'available', soldPrice: null },
+    })
+    await payload.update({
+      collection: 'franchises',
+      where: { id: { exists: true } },
+      data: { purseSpent: 0 },
+    })
+    const queue = await freeAgentIds(payload)
+    await payload.update({
+      collection: 'auctions',
+      id: Number(auctionId),
+      data: { status: 'live', retentionOpen: false, queue, lotStatus: 'idle', currentPlayer: null },
+      user,
+    })
+    await payload.create({
+      collection: 'activity',
+      data: { type: 'auction', message: `Main auction is live — ${queue.length} players in the pool.` },
+      overrideAccess: true,
+    })
+    revalidatePath('/auction')
+    revalidatePath('/')
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+/** Commissioner: start a MID auction over the current free-agent pool. */
+export async function createMidAuction(input: { title: string }): Promise<Result> {
+  const { payload, user } = await getUser()
+  if (!isCommissioner(user)) return { ok: false, error: 'Commissioner only.' }
+  try {
+    const queue = await freeAgentIds(payload)
+    if (queue.length === 0) return { ok: false, error: 'No free-agent players to auction.' }
+    await payload.update({
+      collection: 'auctions',
+      where: { status: { equals: 'live' } },
+      data: { status: 'ended', lotStatus: 'idle', currentPlayer: null },
+    })
+    await payload.create({
+      collection: 'auctions',
+      data: { title: input.title || 'Mid Auction', kind: 'mid', status: 'live', queue, lotStatus: 'idle' },
+      user,
+    })
+    await payload.create({
+      collection: 'activity',
+      data: { type: 'auction', message: `Mid auction is live — ${queue.length} free agents up for grabs.` },
+      overrideAccess: true,
+    })
+    revalidatePath('/auction')
+    revalidatePath('/')
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+/** Commissioner: end an auction. */
+export async function endAuction(auctionId: string): Promise<Result> {
+  const { payload, user } = await getUser()
+  if (!isCommissioner(user)) return { ok: false, error: 'Commissioner only.' }
+  try {
+    await payload.update({
+      collection: 'auctions',
+      id: Number(auctionId),
+      data: { status: 'ended', lotStatus: 'idle', currentPlayer: null, retentionOpen: false },
+      user,
+    })
+    revalidatePath('/auction')
+    revalidatePath('/')
     return { ok: true }
   } catch (e) {
     return { ok: false, error: (e as Error).message }

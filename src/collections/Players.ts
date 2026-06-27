@@ -98,5 +98,14 @@ export const Players: CollectionConfig = {
       min: 0,
       admin: { position: 'sidebar', description: 'Final hammer price.' },
     },
+    {
+      name: 'retained',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        description: 'Kept by its team for a main auction (set during retention).',
+      },
+    },
   ],
 }
