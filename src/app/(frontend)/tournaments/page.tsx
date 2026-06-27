@@ -9,14 +9,6 @@ import { cn } from '@/lib/utils'
 export const revalidate = 3600 // cached; purged on-demand via Payload hooks (src/lib/revalidate.ts)
 export const metadata = { title: 'Tournaments' }
 
-const FORMAT_LABEL: Record<string, string> = {
-  'round-robin': 'Round Robin',
-  'single-elim': 'Single Elimination',
-  'double-elim': 'Double Elimination',
-  'groups-knockout': 'Groups + Knockout',
-  'season-league': 'Season League',
-}
-
 export default async function TournamentsPage() {
   const { data, dbReady } = await safeQuery(
     async (payload) => {
@@ -24,20 +16,21 @@ export default async function TournamentsPage() {
       return res.docs.map((t) => ({
         id: String(t.id),
         name: t.name,
-        format: t.format ?? 'round-robin',
         status: t.status ?? 'upcoming',
         season: t.season ?? null,
-        participants: Array.isArray(t.participants) ? t.participants.length : 0,
+        // Show the OWNER names of the participating franchises (team as fallback).
+        participants: (Array.isArray(t.participants) ? t.participants : [])
+          .map((p) => (typeof p === 'object' && p ? p.ownerName || p.name : null))
+          .filter(Boolean) as string[],
         champion: typeof t.champion === 'object' ? (t.champion?.name ?? null) : null,
       }))
     },
     [] as {
       id: string
       name: string
-      format: string
       status: string
       season: string | null
-      participants: number
+      participants: string[]
       champion: string | null
     }[],
   )
@@ -58,7 +51,7 @@ export default async function TournamentsPage() {
         icon={Trophy}
         subtitle="Brackets, fixtures & champions"
         action={
-          <Link href="/admin/collections/tournaments/create" className="skeuo-btn rounded-lg px-4 py-2 text-sm font-semibold">
+          <Link href="/commissioner/tournaments" className="skeuo-btn rounded-lg px-4 py-2 text-sm font-semibold">
             New Tournament
           </Link>
         }
@@ -71,10 +64,10 @@ export default async function TournamentsPage() {
                 <span className="skeuo grid h-12 w-12 place-items-center rounded-xl text-warning">
                   <Trophy weight="bold" size={24} />
                 </span>
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <h3 className="font-display text-xl font-black uppercase tracking-tight">{t.name}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {FORMAT_LABEL[t.format]} · {t.participants} teams
+                  <p className="truncate text-xs text-muted-foreground">
+                    {t.participants.length ? t.participants.join(' · ') : 'No owners yet'}
                     {t.champion && ` · 🏆 ${t.champion}`}
                   </p>
                 </div>
@@ -101,7 +94,7 @@ export default async function TournamentsPage() {
           title="No tournaments yet"
           description="Spin up a tournament — round robin, knockout, or a full season league — then add fixtures."
           cta={
-            <Link href="/admin/collections/tournaments/create" className="skeuo-btn rounded-lg px-4 py-2 font-semibold">
+            <Link href="/commissioner/tournaments" className="skeuo-btn rounded-lg px-4 py-2 font-semibold">
               Create Tournament
             </Link>
           }

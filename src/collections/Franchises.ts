@@ -58,10 +58,18 @@ export const Franchises: CollectionConfig = {
     { name: 'bio', type: 'textarea' },
     // ── sidebar ─────────────────────────────────────────────────
     {
+      name: 'ownerName',
+      type: 'text',
+      admin: {
+        position: 'sidebar',
+        description: 'Display name of the franchise owner (shown in standings & tournaments).',
+      },
+    },
+    {
       name: 'owner',
       type: 'relationship',
       relationTo: 'users',
-      admin: { position: 'sidebar' },
+      admin: { position: 'sidebar', description: 'Optional linked user account.' },
     },
     {
       name: 'purseTotal',

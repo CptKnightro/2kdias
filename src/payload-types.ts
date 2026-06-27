@@ -188,6 +188,13 @@ export interface Franchise {
    */
   color?: string | null;
   bio?: string | null;
+  /**
+   * Display name of the franchise owner (shown in standings & tournaments).
+   */
+  ownerName?: string | null;
+  /**
+   * Optional linked user account.
+   */
   owner?: (number | null) | User;
   /**
    * Total budget for the auction.
@@ -618,6 +625,7 @@ export interface FranchisesSelect<T extends boolean = true> {
   logo?: T;
   color?: T;
   bio?: T;
+  ownerName?: T;
   owner?: T;
   purseTotal?: T;
   purseSpent?: T;

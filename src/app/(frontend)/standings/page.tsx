@@ -9,20 +9,16 @@ import { StandingsBoard, type StandingRow } from './standings-board'
 export const revalidate = 3600 // cached; purged on-demand via Payload hooks (src/lib/revalidate.ts)
 export const metadata = { title: 'Standings' }
 
-const ownerName = (v: unknown): string | null =>
-  v && typeof v === 'object' && 'name' in v ? ((v as { name?: string }).name ?? null) : null
-
 export default async function StandingsPage() {
   const { data, dbReady } = await safeQuery<StandingRow[]>(
     async (payload) => {
-      // depth 1 so the owner relationship is populated (owner is a `users` doc).
-      const fr = await payload.find({ collection: 'franchises', limit: 50, depth: 1 })
+      const fr = await payload.find({ collection: 'franchises', limit: 50, depth: 0 })
       const table: Record<string, StandingRow> = {}
       for (const f of fr.docs) {
         table[String(f.id)] = {
           id: String(f.id),
           team: f.name,
-          owner: ownerName(f.owner),
+          owner: f.ownerName ?? null,
           color: f.color ?? '#DF2604',
           w: 0,
           l: 0,
