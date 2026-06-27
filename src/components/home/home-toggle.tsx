@@ -1,14 +1,15 @@
 'use client'
 
 import * as React from 'react'
-import { SquaresFour, Pulse } from '@phosphor-icons/react'
+import { SquaresFour, Pulse, Basketball } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
-type View = 'dashboard' | 'status'
+type View = 'dashboard' | 'status' | 'log'
 
 const TABS: { key: View; label: string; icon: typeof SquaresFour }[] = [
   { key: 'dashboard', label: 'Dashboard', icon: SquaresFour },
   { key: 'status', label: 'Status', icon: Pulse },
+  { key: 'log', label: 'Log Match', icon: Basketball },
 ]
 
 /**
@@ -19,11 +20,15 @@ const TABS: { key: View; label: string; icon: typeof SquaresFour }[] = [
 export function HomeToggle({
   dashboard,
   status,
+  log,
 }: {
   dashboard: React.ReactNode
   status: React.ReactNode
+  log: React.ReactNode
 }) {
   const [view, setView] = React.useState<View>('dashboard')
+
+  const views: Record<View, React.ReactNode> = { dashboard, status, log }
 
   return (
     <div className="space-y-6">
@@ -56,7 +61,7 @@ export function HomeToggle({
         </div>
       </div>
 
-      <div>{view === 'dashboard' ? dashboard : status}</div>
+      <div>{views[view]}</div>
     </div>
   )
 }

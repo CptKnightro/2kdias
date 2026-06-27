@@ -10,6 +10,7 @@ import {
 } from '@phosphor-icons/react/dist/ssr'
 import { PlayerCard, type PlayerCardData } from '@/components/player-card'
 import { GlassPanel, StatTile } from '@/components/ui-bits'
+import { MatchStats, type TeamStat } from '@/components/home/match-stats'
 
 export type DashboardData = {
   season: string
@@ -17,6 +18,7 @@ export type DashboardData = {
   players: number
   sold: number
   cards: PlayerCardData[]
+  stats: TeamStat[]
 }
 
 const QUICK_LINKS = [
@@ -25,7 +27,7 @@ const QUICK_LINKS = [
   { href: '/standings', label: 'Standings', icon: UsersIcon, desc: 'League table & form' },
 ]
 
-export function DashboardView({ season, franchises, players, sold, cards }: DashboardData) {
+export function DashboardView({ season, franchises, players, sold, cards, stats }: DashboardData) {
   return (
     <div className="space-y-8">
       {/* Hero */}
@@ -82,6 +84,9 @@ export function DashboardView({ season, franchises, players, sold, cards }: Dash
           </GlassPanel>
         )}
       </section>
+
+      {/* League stats from logged matches */}
+      <MatchStats stats={stats} />
 
       {/* Quick links */}
       <div className="grid gap-3 sm:grid-cols-3">
