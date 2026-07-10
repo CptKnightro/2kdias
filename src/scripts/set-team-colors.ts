@@ -9,7 +9,7 @@ import config from '../payload.config'
  */
 const COLORS: Record<string, string> = {
   lakers: '#FDB927', // Lakers gold/yellow
-  raptors: '#E30200', // Netflix blood red
+  raptors: '#7036B9', // retro-logo purple
   heat: '#98002E', // unchanged
   thunders: '#007AC1', // unchanged
   nets: '#FFFFFF', // unchanged

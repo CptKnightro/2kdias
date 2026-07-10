@@ -7,6 +7,7 @@ import { PageHeader, GlassPanel, StatTile, EmptyState } from '@/components/ui-bi
 import { DbErrorToast } from '@/components/db-error-toast'
 import { PageSkeleton } from '@/components/skeletons'
 import { PlayerCard } from '@/components/player-card'
+import { TeamLogo, teamLogoSrc } from '@/components/team-logo'
 
 export const dynamic = 'force-dynamic' // never cache a transient DB blip (would be served for the whole revalidate window)
 
@@ -84,6 +85,8 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
           >
             {mediaUrl(f.logo) ? (
               <Image src={mediaUrl(f.logo)!} alt={f.name} width={80} height={80} className="object-cover" />
+            ) : teamLogoSrc(f.name) ? (
+              <TeamLogo name={f.name} size={56} />
             ) : (
               <UsersIcon weight="bold" size={36} />
             )}

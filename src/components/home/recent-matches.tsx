@@ -15,6 +15,7 @@ export type RecentMatch = {
   awayColor: string | null
   homeScore: number | null
   awayScore: number | null
+  walkover: boolean
   date: string
 }
 
@@ -76,6 +77,11 @@ function MatchRow({ match: m, canDelete }: { match: RecentMatch; canDelete: bool
       </div>
       <Side name={m.away} color={m.awayColor} win={awayWon} align="left" />
       <div className="ml-auto flex shrink-0 items-center gap-3">
+        {m.walkover && (
+          <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-warning">
+            Walkover
+          </span>
+        )}
         {m.date && <span className="hidden text-xs text-muted-foreground sm:inline">{m.date}</span>}
         {canDelete && (
           <button
@@ -109,13 +115,23 @@ function Side({
   align: 'left' | 'right'
 }) {
   return (
-    <div className={`flex min-w-0 flex-1 items-center gap-2 ${align === 'right' ? 'justify-end text-right' : ''}`}>
+    <div
+      className={`flex min-w-0 flex-1 items-center gap-2 ${align === 'right' ? 'justify-end text-right' : ''}`}
+    >
       {align === 'left' && (
-        <span className="inline-block size-2.5 shrink-0 rounded-full" style={{ background: color ?? DOT }} />
+        <span
+          className="inline-block size-2.5 shrink-0 rounded-full"
+          style={{ background: color ?? DOT }}
+        />
       )}
-      <span className={`truncate text-sm font-semibold ${win ? '' : 'text-muted-foreground'}`}>{name}</span>
+      <span className={`truncate text-sm font-semibold ${win ? '' : 'text-muted-foreground'}`}>
+        {name}
+      </span>
       {align === 'right' && (
-        <span className="inline-block size-2.5 shrink-0 rounded-full" style={{ background: color ?? DOT }} />
+        <span
+          className="inline-block size-2.5 shrink-0 rounded-full"
+          style={{ background: color ?? DOT }}
+        />
       )}
     </div>
   )

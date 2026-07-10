@@ -21,11 +21,11 @@ import { cn } from '@/lib/utils'
 
 const NAV = [
   { href: '/', label: 'Home', icon: House },
+  { href: '/tournaments', label: 'Tournaments', icon: Trophy },
   { href: '/auction', label: 'Auction', icon: Gavel },
   { href: '/teams', label: 'Teams', icon: UsersIcon },
   { href: '/players', label: 'Players', icon: IdentificationCard },
   { href: '/trades', label: 'Trades', icon: ArrowsLeftRight },
-  { href: '/tournaments', label: 'Tournaments', icon: Trophy },
   { href: '/standings', label: 'Standings', icon: ListNumbers },
   { href: '/records', label: 'Records', icon: Medal },
 ]
@@ -37,8 +37,7 @@ export function SiteNav() {
   // The login page is a standalone screen — no league nav.
   if (pathname === '/login') return null
 
-  const isActive = (href: string) =>
-    href === '/' ? pathname === '/' : pathname.startsWith(href)
+  const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href))
 
   return (
     <header className="sticky top-0 z-50 px-3 pt-3">

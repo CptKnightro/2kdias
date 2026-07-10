@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Basketball, Plus } from '@phosphor-icons/react/dist/ssr'
 import { safeQuery } from '@/lib/payload'
 import { PageHeader, EmptyState, GlassPanel } from '@/components/ui-bits'
+import { TeamLogo } from '@/components/team-logo'
 import { DbErrorToast } from '@/components/db-error-toast'
 import { PageSkeleton } from '@/components/skeletons'
 import { cn } from '@/lib/utils'
@@ -73,14 +74,26 @@ export default async function MatchesPage() {
                 >
                   {m.status}
                 </span>
-                <span className={cn('flex-1 text-right font-semibold', homeWin && 'text-primary')}>
-                  {m.home}
+                <span
+                  className={cn(
+                    'flex flex-1 items-center justify-end gap-2 font-semibold',
+                    homeWin && 'text-primary',
+                  )}
+                >
+                  <span className="truncate">{m.home}</span>
+                  <TeamLogo name={m.home} size={24} />
                 </span>
                 <span className="skeuo-inset rounded-lg px-3 py-1 font-display font-bold">
                   {final ? `${m.homeScore ?? 0} – ${m.awayScore ?? 0}` : 'vs'}
                 </span>
-                <span className={cn('flex-1 font-semibold', final && !homeWin && 'text-primary')}>
-                  {m.away}
+                <span
+                  className={cn(
+                    'flex flex-1 items-center gap-2 font-semibold',
+                    final && !homeWin && 'text-primary',
+                  )}
+                >
+                  <TeamLogo name={m.away} size={24} />
+                  <span className="truncate">{m.away}</span>
                 </span>
               </GlassPanel>
             )

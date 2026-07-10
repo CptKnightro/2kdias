@@ -21,6 +21,7 @@ import {
 } from '@phosphor-icons/react'
 import { PlayerCard, type PlayerCardData } from '@/components/player-card'
 import { GlassPanel } from '@/components/ui-bits'
+import { TeamLogo } from '@/components/team-logo'
 import { getSupabaseBrowser } from '@/lib/supabase/client'
 import {
   placeBid,
@@ -528,10 +529,7 @@ export function AuctionRoom({
                       />
                       <div className="relative flex items-center justify-between gap-2">
                         <span className="flex min-w-0 items-center gap-1.5">
-                          <span
-                            className="size-2.5 shrink-0 rounded-full"
-                            style={{ background: dot }}
-                          />
+                          <TeamLogo name={f.name} color={dot} size={20} />
                           <span className="truncate text-xs font-semibold text-foreground/80">
                             {f.name}
                           </span>
@@ -579,7 +577,10 @@ export function AuctionRoom({
                     animate={{ opacity: 1, x: 0 }}
                     className="flex items-center justify-between rounded-lg bg-foreground/5 px-3 py-2 text-sm"
                   >
-                    <span className="font-medium">{b.franchiseName}</span>
+                    <span className="flex min-w-0 items-center gap-2 font-medium">
+                      <TeamLogo name={b.franchiseName} size={18} />
+                      <span className="truncate">{b.franchiseName}</span>
+                    </span>
                     <span className="font-display font-bold text-primary">{money(b.amount)}</span>
                   </motion.li>
                 ))}
@@ -639,11 +640,8 @@ function HistoryList({
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-semibold leading-tight">{h.name}</span>
               {h.result === 'sold' ? (
-                <span className="flex items-center gap-1 truncate text-xs text-muted-foreground">
-                  <span
-                    className="h-1.5 w-1.5 shrink-0 rounded-full"
-                    style={{ background: h.color || '#DF2604' }}
-                  />
+                <span className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+                  <TeamLogo name={h.franchiseName} color={h.color || '#DF2604'} size={14} />
                   {h.franchiseName ?? 'Team'}
                 </span>
               ) : (
@@ -891,10 +889,7 @@ function SignInToBid({
             onClick={() => onPick(f.id)}
             className="skeuo-btn flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold"
           >
-            <span
-              className="h-2.5 w-2.5 shrink-0 rounded-full"
-              style={{ background: f.color || '#DF2604' }}
-            />
+            <TeamLogo name={f.name} color={f.color || '#DF2604'} size={20} />
             {f.name}
           </button>
         ))}

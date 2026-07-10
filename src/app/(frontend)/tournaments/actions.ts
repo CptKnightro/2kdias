@@ -22,7 +22,11 @@ export type TournamentGame = {
 
 /** Games live in the tournament's `bracket` JSON column (no extra schema). */
 function readGames(bracket: unknown): TournamentGame[] {
-  if (bracket && typeof bracket === 'object' && Array.isArray((bracket as { games?: unknown }).games)) {
+  if (
+    bracket &&
+    typeof bracket === 'object' &&
+    Array.isArray((bracket as { games?: unknown }).games)
+  ) {
     return (bracket as { games: TournamentGame[] }).games
   }
   return []
@@ -80,8 +84,9 @@ export async function logTournamentGame(input: {
     const walkover = !!input.walkover
     const scoreA = int(input.scoreA)
     const scoreB = int(input.scoreB)
-    if (!walkover && (scoreA == null || scoreB == null))
-      return { ok: false, error: 'Enter both scores' }
+    // Scores are always recorded — a walkover is just a tag on the result, and
+    // the loser (by score) earns a Walk of Shame mark.
+    if (scoreA == null || scoreB == null) return { ok: false, error: 'Enter both scores' }
 
     const payload = await getPayloadClient()
     const t = await payload.findByID({ collection: 'tournaments', id: tid, depth: 0 })
@@ -116,7 +121,11 @@ export async function deleteTournamentGame(tournamentId: number, gameId: string)
     const payload = await getPayloadClient()
     const t = await payload.findByID({ collection: 'tournaments', id: tournamentId, depth: 0 })
     const games = readGames(t.bracket).filter((g) => g.id !== gameId)
-    await payload.update({ collection: 'tournaments', id: tournamentId, data: { bracket: { games } } })
+    await payload.update({
+      collection: 'tournaments',
+      id: tournamentId,
+      data: { bracket: { games } },
+    })
     purge(tournamentId)
     return { ok: true }
   } catch (e) {

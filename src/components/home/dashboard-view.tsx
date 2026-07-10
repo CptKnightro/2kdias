@@ -18,6 +18,8 @@ import { RecordCards } from '@/components/home/record-cards'
 import { TeamBars } from '@/components/home/charts/team-bars'
 import { WinShareDonut } from '@/components/home/charts/win-share-donut'
 import { ScoringTimeline } from '@/components/home/charts/scoring-timeline'
+import { WalkOfShame } from '@/components/walk-of-shame'
+import type { ShameRow } from '@/lib/tournament-stats'
 import {
   buildWinShare,
   ownerLabel,
@@ -36,6 +38,7 @@ export type DashboardData = {
   form: FormRow[]
   records: Records
   timeline: Timeline
+  shame: ShameRow[]
 }
 
 const QUICK_LINKS = [
@@ -44,13 +47,26 @@ const QUICK_LINKS = [
   { href: '/standings', label: 'Standings', icon: UsersIcon, desc: 'League table & form' },
 ]
 
-export function DashboardView({ season, stats, headToHead, form, records, timeline }: DashboardData) {
+export function DashboardView({
+  season,
+  stats,
+  headToHead,
+  form,
+  records,
+  timeline,
+  shame,
+}: DashboardData) {
   const played = stats.filter((s) => s.games > 0)
   const hasMatches = played.length > 0
 
   const winShare = buildWinShare(stats)
   const ranked = [...played].sort(standingsSort)
-  const byWins = ranked.map((s) => ({ id: s.id, label: ownerLabel(s), value: s.wins, color: s.color }))
+  const byWins = ranked.map((s) => ({
+    id: s.id,
+    label: ownerLabel(s),
+    value: s.wins,
+    color: s.color,
+  }))
   const byPpg = [...played]
     .map((s) => ({
       id: s.id,
@@ -74,16 +90,21 @@ export function DashboardView({ season, stats, headToHead, form, records, timeli
 
       {!hasMatches ? (
         <section>
-          <h2 className="mb-4 font-display text-2xl font-black uppercase tracking-tight">League Stats</h2>
+          <h2 className="mb-4 font-display text-2xl font-black uppercase tracking-tight">
+            League Stats
+          </h2>
           <GlassPanel className="p-8 text-center text-sm text-muted-foreground">
-            No matches logged yet. Use the <span className="font-semibold text-foreground">Log Match</span> tab
-            to record a result — charts appear here once games are in.
+            No matches logged yet. Use the{' '}
+            <span className="font-semibold text-foreground">Log Match</span> tab to record a result
+            — charts appear here once games are in.
           </GlassPanel>
         </section>
       ) : (
         <>
           <section className="space-y-5">
-            <h2 className="font-display text-2xl font-black uppercase tracking-tight">League Stats</h2>
+            <h2 className="font-display text-2xl font-black uppercase tracking-tight">
+              League Stats
+            </h2>
 
             <StatTiles stats={stats} records={records} />
 
@@ -93,7 +114,9 @@ export function DashboardView({ season, stats, headToHead, form, records, timeli
                 {winShare.slices.length > 0 ? (
                   <WinShareDonut slices={winShare.slices} totalWins={winShare.totalWins} />
                 ) : (
-                  <p className="py-12 text-center text-sm text-muted-foreground">No wins recorded yet.</p>
+                  <p className="py-12 text-center text-sm text-muted-foreground">
+                    No wins recorded yet.
+                  </p>
                 )}
               </ChartCard>
               <ChartCard title="Win rate" icon={Ranking} fill>
@@ -113,7 +136,9 @@ export function DashboardView({ season, stats, headToHead, form, records, timeli
                         <span className="shrink-0 tabular-nums text-muted-foreground">
                           {s.wins}-{s.losses}
                         </span>
-                        <span className="w-11 shrink-0 text-right font-bold tabular-nums">{pct}%</span>
+                        <span className="w-11 shrink-0 text-right font-bold tabular-nums">
+                          {pct}%
+                        </span>
                       </li>
                     )
                   })}
@@ -145,6 +170,9 @@ export function DashboardView({ season, stats, headToHead, form, records, timeli
             )}
 
             <StandingsTable stats={stats} />
+
+            {/* Walk of Shame — walkover losses, league + tournament combined */}
+            <WalkOfShame rows={shame} subtitle="League + tournament combined" />
           </section>
 
           <RecordCards records={records} />

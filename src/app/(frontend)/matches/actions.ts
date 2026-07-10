@@ -49,11 +49,10 @@ export async function logMatch(input: {
     if (!Number.isFinite(homeFranchise)) return { ok: false, error: 'Pick the first team' }
     if (!Number.isFinite(awayFranchise)) return { ok: false, error: 'Pick the second team' }
     if (homeFranchise === awayFranchise) return { ok: false, error: 'Teams must be different' }
-    // Walkovers have no game played, so scores are optional; otherwise both are required.
-    if (!walkover) {
-      if (homeScore == null || awayScore == null) return { ok: false, error: 'Enter both scores' }
-      if (homeScore < 0 || awayScore < 0) return { ok: false, error: 'Scores cannot be negative' }
-    }
+    // Scores are always recorded — a walkover is just a tag on the result, and
+    // the loser (by score) earns a Walk of Shame mark.
+    if (homeScore == null || awayScore == null) return { ok: false, error: 'Enter both scores' }
+    if (homeScore < 0 || awayScore < 0) return { ok: false, error: 'Scores cannot be negative' }
 
     const payload = await getPayloadClient()
     const doc = await payload.create({

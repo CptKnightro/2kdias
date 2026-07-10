@@ -1,4 +1,5 @@
 import { Basketball, ChartBar, Crown, Fire } from '@phosphor-icons/react/dist/ssr'
+import { TeamLogo } from '@/components/team-logo'
 import type { Icon } from '@phosphor-icons/react'
 import { GlassPanel } from '@/components/ui-bits'
 import { ownerLabel, standingsSort, PRIMARY, type Records, type TeamStat } from '@/lib/home-stats'
@@ -85,10 +86,7 @@ export function StandingsTable({ stats }: { stats: TeamStat[] }) {
                 <tr key={s.id} className="border-b border-border/50 last:border-0">
                   <td className="px-4 py-2.5">
                     <span className="flex items-center gap-2">
-                      <span
-                        className="inline-block size-2.5 shrink-0 rounded-full"
-                        style={{ background: s.color ?? PRIMARY }}
-                      />
+                      <TeamLogo name={s.name} color={s.color ?? PRIMARY} size={24} />
                       <span className="min-w-0">
                         <span className="block truncate font-semibold leading-tight">{ownerLabel(s)}</span>
                         {s.owner && (

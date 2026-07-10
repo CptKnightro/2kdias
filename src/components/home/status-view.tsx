@@ -10,6 +10,7 @@ import {
   Stack,
 } from '@phosphor-icons/react/dist/ssr'
 import { GlassPanel, EmptyState } from '@/components/ui-bits'
+import { TeamLogo } from '@/components/team-logo'
 
 export type ActivityType = 'auction' | 'trade' | 'match' | 'award' | 'system'
 
@@ -152,9 +153,10 @@ export function StatusView({ auctions, activity, trades }: StatusData) {
                           <>
                             <span className="opacity-40">·</span>
                             <span className="inline-flex items-center gap-1">
-                              <span
-                                className="size-2 rounded-full"
-                                style={{ background: a.franchiseColor ?? '#DF2604' }}
+                              <TeamLogo
+                                name={a.franchiseName}
+                                color={a.franchiseColor ?? '#DF2604'}
+                                size={16}
                               />
                               {a.franchiseName}
                             </span>

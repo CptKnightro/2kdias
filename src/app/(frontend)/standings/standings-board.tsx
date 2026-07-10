@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { Crown } from '@phosphor-icons/react'
 import { GlassPanel } from '@/components/ui-bits'
+import { TeamLogo } from '@/components/team-logo'
 import { cn } from '@/lib/utils'
 
 export type StandingRow = {
@@ -89,11 +90,7 @@ function SeedView({ rows }: { rows: StandingRow[] }) {
             >
               {rank}
             </span>
-            <span
-              className="size-3 shrink-0 rounded-full"
-              style={{ background: r.color }}
-              aria-hidden
-            />
+            <TeamLogo name={r.team} color={r.color} size={32} />
             <div className="min-w-0 flex-1">
               <p className="truncate font-display text-lg font-black uppercase leading-tight tracking-tight">
                 {r.owner ?? r.team}
@@ -140,7 +137,7 @@ function PointsTable({ rows }: { rows: StandingRow[] }) {
                   <td className="px-4 py-3 font-display font-bold text-muted-foreground">{i + 1}</td>
                   <td className="px-2 py-3">
                     <span className="flex items-center gap-2 font-semibold">
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: r.color }} />
+                      <TeamLogo name={r.team} color={r.color} size={20} />
                       {r.team}
                     </span>
                   </td>

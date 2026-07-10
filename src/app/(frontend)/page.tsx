@@ -18,6 +18,13 @@ import {
   type Records,
   type Timeline,
 } from '@/lib/home-stats'
+import {
+  buildWalkOfShame,
+  bracketToSideGames,
+  matchToSideGame,
+  type SideGame,
+  type ShameRow,
+} from '@/lib/tournament-stats'
 import type { RecentMatch } from '@/components/home/recent-matches'
 import type { Option } from '@/components/commissioner/fields'
 
@@ -35,20 +42,29 @@ const count = (v: unknown): number => (Array.isArray(v) ? v.length : 0)
 export default async function HomePage() {
   const { data, dbReady } = await safeQuery(
     async (payload) => {
-      const [activity, auctions, trades, settings, franchiseList, matches] =
+      const [activity, auctions, trades, settings, franchiseList, matches, tournaments] =
         await Promise.all([
           payload.find({ collection: 'activity', sort: '-createdAt', limit: 20, depth: 1 }),
           payload.find({ collection: 'auctions', sort: '-updatedAt', limit: 10, depth: 0 }),
           payload.find({ collection: 'trades', sort: '-createdAt', limit: 8, depth: 1 }),
           payload.findGlobal({ slug: 'league-settings' }),
           payload.find({ collection: 'franchises', sort: 'name', limit: 200, depth: 0 }),
+          // League matches only — tournament games live in brackets (separate board).
           payload.find({
             collection: 'matches',
-            where: { and: [{ homeScore: { exists: true } }, { awayScore: { exists: true } }] },
+            where: {
+              and: [
+                { homeScore: { exists: true } },
+                { awayScore: { exists: true } },
+                { tournament: { exists: false } },
+              ],
+            },
             sort: '-playedAt',
             limit: 1000,
             depth: 1,
           }),
+          // Tournaments — only their bracket games feed the combined Walk of Shame.
+          payload.find({ collection: 'tournaments', limit: 200, depth: 0 }),
         ])
 
       const franchiseRows: FranchiseRow[] = franchiseList.docs.map((f) => ({
@@ -58,6 +74,12 @@ export default async function HomePage() {
         color: f.color ?? null,
       }))
       const matchDocs = matches.docs
+
+      // Walk of Shame = walkover losses across league matches + tournament games.
+      const shame = buildWalkOfShame(franchiseRows, [
+        ...matchDocs.map((m) => matchToSideGame(m)).filter((g): g is SideGame => g !== null),
+        ...tournaments.docs.flatMap((t) => bracketToSideGames(t.bracket)),
+      ])
 
       return {
         season: settings?.seasonName ?? 'Season 1',
@@ -84,12 +106,15 @@ export default async function HomePage() {
           requestedCount: count(t.requestedPlayers),
           date: fmtDate(t.createdAt),
         })),
-        franchiseOptions: franchiseRows.map((f): Option => ({ label: f.name, value: String(f.id) })),
+        franchiseOptions: franchiseRows.map(
+          (f): Option => ({ label: f.name, value: String(f.id) }),
+        ),
         stats: buildStats(franchiseRows, matchDocs),
         headToHead: buildHeadToHead(franchiseRows, matchDocs),
         form: buildForm(franchiseRows, matchDocs),
         records: buildRecords(franchiseRows, matchDocs),
         timeline: buildTimeline(franchiseRows, matchDocs),
+        shame,
         recent: matches.docs.slice(0, 10).map(
           (m): RecentMatch => ({
             id: m.id as number,
@@ -99,6 +124,7 @@ export default async function HomePage() {
             awayColor: relColor(m.awayFranchise),
             homeScore: m.homeScore ?? null,
             awayScore: m.awayScore ?? null,
+            walkover: !!m.walkover,
             date: fmtDate(m.playedAt),
           }),
         ),
@@ -121,6 +147,7 @@ export default async function HomePage() {
         longestStreak: null,
       } as Records,
       timeline: { series: [], data: [] } as Timeline,
+      shame: [] as ShameRow[],
       recent: [] as RecentMatch[],
     },
   )
@@ -144,6 +171,7 @@ export default async function HomePage() {
           form={data.form}
           records={data.records}
           timeline={data.timeline}
+          shame={data.shame}
         />
       }
       status={<StatusView auctions={data.auctions} activity={data.activity} trades={data.trades} />}

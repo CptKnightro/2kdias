@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Users as UsersIcon, IdentificationCard, CurrencyCircleDollar } from '@phosphor-icons/react/dist/ssr'
 import { safeQuery, mediaUrl } from '@/lib/payload'
 import { PageHeader, EmptyState } from '@/components/ui-bits'
+import { TeamLogo } from '@/components/team-logo'
 import { DbErrorToast } from '@/components/db-error-toast'
 import { PageSkeleton } from '@/components/skeletons'
 
@@ -72,6 +73,7 @@ export default async function TeamsPage() {
                   className="h-8 w-1 shrink-0 rounded-full"
                   style={{ background: t.color }}
                 />
+                <TeamLogo name={t.name} size={36} className="transition-transform group-hover:scale-110" />
                 <h3 className="font-display text-xl font-black uppercase leading-tight tracking-tight">
                   {t.name}
                 </h3>

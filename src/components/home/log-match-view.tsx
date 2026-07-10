@@ -5,7 +5,14 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Basketball, Trophy, FlagBanner } from '@phosphor-icons/react'
 import { GlassPanel } from '@/components/ui-bits'
-import { Field, Select, NumberInput, SubmitButton, MiniButton, type Option } from '@/components/commissioner/fields'
+import {
+  Field,
+  Select,
+  NumberInput,
+  SubmitButton,
+  MiniButton,
+  type Option,
+} from '@/components/commissioner/fields'
 import { logMatch } from '@/app/(frontend)/matches/actions'
 import { RecentMatches, type RecentMatch } from '@/components/home/recent-matches'
 import { cn } from '@/lib/utils'
@@ -37,7 +44,7 @@ export function LogMatchView({
     e.preventDefault()
     if (!homeFranchise || !awayFranchise) return toast.error('Pick both teams')
     if (homeFranchise === awayFranchise) return toast.error('Teams must be different')
-    if (!walkover && (homeScore === '' || awayScore === '')) return toast.error('Enter both scores')
+    if (homeScore === '' || awayScore === '') return toast.error('Enter both scores')
     start(async () => {
       const res = await logMatch({ homeFranchise, awayFranchise, homeScore, awayScore, walkover })
       if (res.ok) {
@@ -77,10 +84,15 @@ export function LogMatchView({
           {/* Walkover toggle — sits at the top of the form */}
           <div className="flex items-center justify-between gap-3 rounded-xl skeuo-inset px-4 py-3">
             <div className="flex items-center gap-2.5">
-              <FlagBanner weight="fill" className={cn('size-5', walkover ? 'text-primary' : 'text-muted-foreground')} />
+              <FlagBanner
+                weight="fill"
+                className={cn('size-5', walkover ? 'text-primary' : 'text-muted-foreground')}
+              />
               <div>
                 <p className="text-sm font-semibold">Walkover</p>
-                <p className="text-xs text-muted-foreground">No game played — score is optional.</p>
+                <p className="text-xs text-muted-foreground">
+                  Just a tag — enter the scores; the loser earns a Walk of Shame mark.
+                </p>
               </div>
             </div>
             <Toggle on={walkover} onChange={setWalkover} label="Walkover" />
@@ -94,7 +106,6 @@ export function LogMatchView({
               teamOptions={homeOptions}
               scoreValue={homeScore}
               onScoreChange={setHomeScore}
-              scoreOptional={walkover}
             />
             <div className="flex items-center justify-center pt-8 font-display text-2xl font-black text-muted-foreground sm:pt-10">
               vs
@@ -106,7 +117,6 @@ export function LogMatchView({
               teamOptions={awayOptions}
               scoreValue={awayScore}
               onScoreChange={setAwayScore}
-              scoreOptional={walkover}
             />
           </div>
 
@@ -133,7 +143,6 @@ function TeamColumn({
   teamOptions,
   scoreValue,
   onScoreChange,
-  scoreOptional,
 }: {
   label: string
   teamValue: string
@@ -141,7 +150,6 @@ function TeamColumn({
   teamOptions: Option[]
   scoreValue: string
   onScoreChange: (v: string) => void
-  scoreOptional?: boolean
 }) {
   return (
     <div className="space-y-3">
@@ -153,7 +161,7 @@ function TeamColumn({
           placeholder="— select team —"
         />
       </Field>
-      <Field label={scoreOptional ? 'Score (optional)' : 'Score'}>
+      <Field label="Score">
         <div className="relative">
           <Basketball
             weight="fill"
@@ -163,7 +171,7 @@ function TeamColumn({
             min={0}
             value={scoreValue}
             onChange={(e) => onScoreChange(e.target.value)}
-            placeholder={scoreOptional ? '—' : '0'}
+            placeholder="0"
             className="pl-9 text-center text-lg font-bold tabular-nums"
           />
         </div>
