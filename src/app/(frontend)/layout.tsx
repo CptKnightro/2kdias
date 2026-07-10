@@ -19,6 +19,8 @@ const saira = Saira_Condensed({
 })
 
 const SITE_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
+// Sourced from package.json via next.config.ts — bump the version to update it.
+const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? '0.0.0'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -53,9 +55,14 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className={`dark ${inter.variable} ${saira.variable}`}>
-      <body className="min-h-screen antialiased">
+      <body className="flex min-h-screen flex-col antialiased">
         <SiteNav />
-        <main className="mx-auto w-full max-w-7xl px-4 pb-24 pt-6">{children}</main>
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-16 pt-6">{children}</main>
+        <footer className="border-t border-border/40 py-4 text-center">
+          <span className="font-mono text-[11px] font-medium tracking-wide text-muted-foreground/50">
+            2KDais · v{APP_VERSION}
+          </span>
+        </footer>
         <Toaster position="top-center" richColors />
       </body>
     </html>

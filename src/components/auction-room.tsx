@@ -12,6 +12,7 @@ import {
   CheckCircle,
   XCircle,
   MagnifyingGlass,
+  ArrowDown,
   Lightning,
   Stack,
   ClockCountdown,
@@ -77,12 +78,18 @@ export function AuctionRoom({
   auction,
   franchises,
   me,
-  canEnd,
+  variant,
 }: {
   auction: AuctionView
   franchises: AuctionFranchise[]
   me: Me
-  canEnd?: boolean
+  /**
+   * Which room this is. The commissioner room is the auctioneer's console (pool
+   * to put players up, going once/twice/hammer, end) with NO bidding. The public
+   * room is the bidder's view (sign in → pick team → bid) with NO auctioneer
+   * controls. The two are laid out differently on purpose.
+   */
+  variant: 'commissioner' | 'public'
 }) {
   const router = useRouter()
   const reduce = useReducedMotion()
@@ -112,11 +119,17 @@ export function AuctionRoom({
     return () => clearInterval(t)
   }, [auction.id, router])
 
-  const isCommish = me?.role === 'commissioner'
+  const isCommish = variant === 'commissioner'
   const lotOpen = ['open', 'going1', 'going2'].includes(auction.lotStatus)
   const blockFree = !lotOpen // idle / sold / unsold → ready for the next lot
   const high = auction.currentHighBid ?? 0
   const nextMin = auction.highFranchiseId ? high + auction.minIncrement : high
+  // Quick-bid options. When the increment is ≥ 5 (mid auctions) snap the floor to
+  // a multiple of the increment with a minimum of 5, so bids read 5 / 10 / 15
+  // instead of 1 / 6 / 11. Main auctions (increment 1) keep their existing steps.
+  const bidInc = auction.minIncrement || 1
+  const baseBid = bidInc >= 5 ? Math.max(bidInc, Math.ceil(nextMin / bidInc) * bidInc) : nextMin
+  const bidOptions = [baseBid, baseBid + 5, baseBid + 10]
 
   const pool = auction.pool
   const upNext = pool.slice(0, ON_DECK)
@@ -220,13 +233,13 @@ export function AuctionRoom({
 
   return (
     <div className="grid items-start gap-4 lg:grid-cols-[290px_minmax(0,1fr)_300px]">
-      {/* ════ LEFT — pool / up next ════════════════════════════════ */}
-      <SideColumn
-        className="order-2 lg:order-1"
-        icon={isCommish ? Stack : Lightning}
-        title={isCommish ? `Player Pool · ${pool.length}` : 'Up Next'}
-      >
-        {isCommish ? (
+      {/* ════ LEFT — pool (commish) / past (public) ════════════════ */}
+      {isCommish ? (
+        <SideColumn
+          className="order-2 lg:order-1"
+          icon={Stack}
+          title={`Player Pool · ${pool.length}`}
+        >
           <CommishPool
             pool={pool}
             onDeck={ON_DECK}
@@ -234,10 +247,16 @@ export function AuctionRoom({
             onPick={putUp}
             autoLeft={blockFree ? autoLeft : null}
           />
-        ) : (
-          <UpNextList players={pool.slice(0, 5)} />
-        )}
-      </SideColumn>
+        </SideColumn>
+      ) : (
+        <SideColumn
+          className="order-2 lg:order-1"
+          icon={Trophy}
+          title={`Past · ${auction.history.length}`}
+        >
+          <HistoryList history={auction.history} money={money} reduce={reduce} />
+        </SideColumn>
+      )}
 
       {/* ════ MIDDLE — the stage ═══════════════════════════════════ */}
       <div className="order-1 space-y-4 lg:order-2">
@@ -258,23 +277,36 @@ export function AuctionRoom({
                   <AnimatePresence>
                     {(auction.lotStatus === 'sold' || auction.lotStatus === 'unsold') && (
                       <motion.div
-                        initial={reduce ? false : { scale: 1.6, opacity: 0, rotate: -18 }}
-                        animate={{ scale: 1, opacity: 1, rotate: -14 }}
-                        transition={{ type: 'spring', stiffness: 320, damping: 16 }}
-                        className={cn(
-                          'pointer-events-none absolute inset-0 grid place-items-center',
-                        )}
+                        initial={reduce ? false : { opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.2 }}
+                        className="pointer-events-none absolute inset-0 grid place-items-center"
                       >
-                        <span
+                        {/* dim the finished lot so the badge reads cleanly over it */}
+                        <div
                           className={cn(
-                            'rounded-lg border-4 px-4 py-1 font-display text-3xl font-black uppercase tracking-widest',
+                            'absolute inset-0 rounded-2xl backdrop-blur-[1px]',
+                            auction.lotStatus === 'sold' ? 'bg-background/55' : 'bg-background/70',
+                          )}
+                        />
+                        <motion.span
+                          initial={reduce ? false : { scale: 0.82, y: 6 }}
+                          animate={{ scale: 1, y: 0 }}
+                          transition={{ type: 'spring', stiffness: 360, damping: 18 }}
+                          className={cn(
+                            'relative inline-flex items-center gap-2 rounded-xl px-4 py-2 font-display text-2xl font-black uppercase tracking-[0.18em] shadow-2xl',
                             auction.lotStatus === 'sold'
-                              ? 'border-success/80 text-success'
-                              : 'border-muted-foreground/70 text-muted-foreground',
+                              ? 'bg-success text-background shadow-success/30'
+                              : 'bg-foreground/15 text-foreground/80 ring-1 ring-foreground/25',
                           )}
                         >
+                          {auction.lotStatus === 'sold' ? (
+                            <CheckCircle weight="fill" size={20} />
+                          ) : (
+                            <XCircle weight="fill" size={20} />
+                          )}
                           {auction.lotStatus === 'sold' ? 'Sold' : 'Passed'}
-                        </span>
+                        </motion.span>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -329,50 +361,53 @@ export function AuctionRoom({
                     </p>
                   </div>
 
-                  {effectiveFid ? (
-                    <div className="mt-5 space-y-3">
-                      {lotOpen ? (
-                        <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
-                          {[nextMin, nextMin + 5, nextMin + 10].map((amt, i) => (
-                            <motion.button
-                              key={i}
-                              whileTap={reduce ? undefined : { scale: 0.94 }}
-                              disabled={pending}
-                              onClick={() => bid(amt)}
-                              className="skeuo-btn rounded-xl px-5 py-3 font-display text-lg font-bold disabled:opacity-50"
+                  {/* Bidding belongs to the public room only — the commissioner
+                      runs the gavel, they don't bid. */}
+                  {!isCommish &&
+                    (effectiveFid ? (
+                      <div className="mt-5 space-y-3">
+                        {lotOpen ? (
+                          <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
+                            {bidOptions.map((amt, i) => (
+                              <motion.button
+                                key={i}
+                                whileTap={reduce ? undefined : { scale: 0.94 }}
+                                disabled={pending}
+                                onClick={() => bid(amt)}
+                                className="skeuo-btn rounded-xl px-5 py-3 font-display text-lg font-bold disabled:opacity-50"
+                              >
+                                {money(amt)}
+                              </motion.button>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            Waiting for the next lot to open…
+                          </p>
+                        )}
+                        {!linkedFid && (
+                          <p className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-muted-foreground sm:justify-start">
+                            Bidding as
+                            <span className="inline-flex items-center gap-1 font-semibold text-foreground">
+                              <span
+                                className="h-2 w-2 rounded-full"
+                                style={{ background: actingFranchise?.color || '#DF2604' }}
+                              />
+                              {actingFranchise?.name}
+                            </span>
+                            ·
+                            <button
+                              onClick={() => choose(null)}
+                              className="font-semibold text-primary underline-offset-2 hover:underline"
                             >
-                              {money(amt)}
-                            </motion.button>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">
-                          Waiting for the next lot to open…
-                        </p>
-                      )}
-                      {!linkedFid && (
-                        <p className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-muted-foreground sm:justify-start">
-                          Bidding as
-                          <span className="inline-flex items-center gap-1 font-semibold text-foreground">
-                            <span
-                              className="h-2 w-2 rounded-full"
-                              style={{ background: actingFranchise?.color || '#DF2604' }}
-                            />
-                            {actingFranchise?.name}
-                          </span>
-                          ·
-                          <button
-                            onClick={() => choose(null)}
-                            className="font-semibold text-primary underline-offset-2 hover:underline"
-                          >
-                            Switch team
-                          </button>
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <SignInToBid franchises={franchises} onPick={choose} />
-                  )}
+                              Switch team
+                            </button>
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <SignInToBid franchises={franchises} onPick={choose} />
+                    ))}
                 </div>
               </motion.div>
             ) : (
@@ -446,19 +481,17 @@ export function AuctionRoom({
                   Start now
                 </button>
               )}
-              {canEnd && (
-                <button
-                  onClick={() => {
-                    if (!confirm('End this auction? You can then start a new Main or Mid auction.'))
-                      return
-                    commish(() => endAuction(auction.id), 'Auction ended')
-                  }}
-                  disabled={pending}
-                  className="ml-auto rounded-lg px-3 py-2 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-40"
-                >
-                  <XCircle weight="bold" size={15} className="mr-1 inline" /> End auction
-                </button>
-              )}
+              <button
+                onClick={() => {
+                  if (!confirm('End this auction? You can then start a new Main or Mid auction.'))
+                    return
+                  commish(() => endAuction(auction.id), 'Auction ended')
+                }}
+                disabled={pending}
+                className="ml-auto rounded-lg px-3 py-2 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-40"
+              >
+                <XCircle weight="bold" size={15} className="mr-1 inline" /> End auction
+              </button>
             </div>
           </GlassPanel>
         )}
@@ -469,40 +502,63 @@ export function AuctionRoom({
             <p className="mb-2 flex items-center gap-2 px-1 text-xs font-bold uppercase tracking-wider text-muted-foreground">
               <CurrencyCircleDollar weight="bold" size={15} /> Purses
             </p>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {franchises.map((f) => {
-                const remaining = f.purseTotal - f.purseSpent
-                const pct = f.purseTotal > 0 ? Math.max(0, (remaining / f.purseTotal) * 100) : 0
-                const isMe = f.id === effectiveFid
-                const isHigh = f.id === auction.highFranchiseId
-                return (
-                  <div
-                    key={f.id}
-                    className={cn(
-                      'skeuo min-w-[8.5rem] shrink-0 rounded-xl p-2.5',
-                      isHigh && 'ring-2 ring-primary',
-                      isMe && !isHigh && 'ring-1 ring-foreground/30',
-                    )}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="flex items-center gap-1.5 truncate text-xs font-semibold">
-                        <span
-                          className="h-2 w-2 shrink-0 rounded-full"
-                          style={{ background: f.color || '#DF2604' }}
-                        />
-                        <span className="truncate">{f.name}</span>
-                      </span>
-                    </div>
-                    <p className="mt-1 font-display text-sm font-bold">{money(remaining)}</p>
-                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-foreground/10">
+            <div className="flex gap-2.5 overflow-x-auto pb-1">
+              {(() => {
+                const maxRem = Math.max(1, ...franchises.map((g) => g.purseTotal - g.purseSpent))
+                return franchises.map((f) => {
+                  const remaining = f.purseTotal - f.purseSpent
+                  const pct = Math.max(3, (remaining / maxRem) * 100)
+                  const isMe = f.id === effectiveFid
+                  const isHigh = f.id === auction.highFranchiseId
+                  const dot = f.color || '#DF2604'
+                  return (
+                    <div
+                      key={f.id}
+                      className={cn(
+                        // ring-inset keeps the highlight inside the card so the
+                        // scroll container's clip edge never cuts it off.
+                        'skeuo relative min-w-[9.25rem] shrink-0 overflow-hidden rounded-xl p-3 transition-all',
+                        isHigh && 'ring-2 ring-inset ring-primary',
+                        isMe && !isHigh && 'ring-1 ring-inset ring-foreground/25',
+                      )}
+                    >
                       <div
-                        className="h-full rounded-full transition-all"
-                        style={{ width: `${pct}%`, background: f.color || 'var(--primary)' }}
+                        className="pointer-events-none absolute -right-5 -top-5 size-14 rounded-full opacity-25 blur-2xl"
+                        style={{ background: dot }}
                       />
+                      <div className="relative flex items-center justify-between gap-2">
+                        <span className="flex min-w-0 items-center gap-1.5">
+                          <span
+                            className="size-2.5 shrink-0 rounded-full"
+                            style={{ background: dot }}
+                          />
+                          <span className="truncate text-xs font-semibold text-foreground/80">
+                            {f.name}
+                          </span>
+                        </span>
+                        {isHigh ? (
+                          <span className="shrink-0 rounded-md bg-primary px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
+                            High
+                          </span>
+                        ) : isMe ? (
+                          <span className="shrink-0 rounded-md bg-foreground/15 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-foreground/70">
+                            You
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="relative mt-2 font-display text-xl font-black leading-none tabular-nums">
+                        {money(remaining)}
+                      </p>
+                      <div className="relative mt-2 h-2 overflow-hidden rounded-full bg-foreground/10">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{ width: `${pct}%`, background: `linear-gradient(90deg, ${dot}aa, ${dot})` }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
+                  )
+                })
+              })()}
             </div>
           </GlassPanel>
         )}
@@ -535,58 +591,76 @@ export function AuctionRoom({
         </GlassPanel>
       </div>
 
-      {/* ════ RIGHT — sold / passed ════════════════════════════════ */}
-      <SideColumn
-        className="order-3"
-        icon={Trophy}
-        title={`Sold · Passed · ${auction.history.length}`}
-      >
-        {auction.history.length === 0 ? (
-          <p className="px-1 py-6 text-center text-sm text-muted-foreground">
-            No lots resolved yet.
-          </p>
-        ) : (
-          <ul className="space-y-1.5">
-            <AnimatePresence initial={false}>
-              {auction.history.map((h) => (
-                <motion.li
-                  key={h.id}
-                  layout={!reduce}
-                  initial={reduce ? false : { opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="skeuo-inset flex items-center gap-2.5 rounded-xl p-2.5"
-                >
-                  <span className="font-display text-lg font-black text-primary">{h.ovr}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold leading-tight">
-                      {h.name}
-                    </span>
-                    {h.result === 'sold' ? (
-                      <span className="flex items-center gap-1 truncate text-xs text-muted-foreground">
-                        <span
-                          className="h-1.5 w-1.5 shrink-0 rounded-full"
-                          style={{ background: h.color || '#DF2604' }}
-                        />
-                        {h.franchiseName ?? 'Team'}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">Passed</span>
-                    )}
-                  </span>
-                  {h.result === 'sold' ? (
-                    <span className="font-display text-sm font-bold text-success">
-                      {money(h.price ?? 0)}
-                    </span>
-                  ) : (
-                    <XCircle weight="bold" size={16} className="text-muted-foreground" />
-                  )}
-                </motion.li>
-              ))}
-            </AnimatePresence>
-          </ul>
-        )}
-      </SideColumn>
+      {/* ════ RIGHT — sold/passed (commish) / up next (public) ═════ */}
+      {isCommish ? (
+        <SideColumn
+          className="order-3"
+          icon={Trophy}
+          title={`Sold · Passed · ${auction.history.length}`}
+        >
+          <HistoryList history={auction.history} money={money} reduce={reduce} />
+        </SideColumn>
+      ) : (
+        <SideColumn className="order-3" icon={Lightning} title="Up Next">
+          <UpNextList players={pool.slice(0, 5)} />
+        </SideColumn>
+      )}
     </div>
+  )
+}
+
+/** Resolved-lots list (sold / passed), newest first. Shared by both rooms. */
+function HistoryList({
+  history,
+  money,
+  reduce,
+}: {
+  history: HistoryPlayer[]
+  money: (n: number) => string
+  reduce: boolean | null
+}) {
+  if (history.length === 0) {
+    return (
+      <p className="px-1 py-6 text-center text-sm text-muted-foreground">No lots resolved yet.</p>
+    )
+  }
+  return (
+    <ul className="space-y-1.5">
+      <AnimatePresence initial={false}>
+        {history.map((h) => (
+          <motion.li
+            key={h.id}
+            layout={!reduce}
+            initial={reduce ? false : { opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="skeuo-inset flex items-center gap-2.5 rounded-xl p-2.5"
+          >
+            <span className="font-display text-lg font-black text-primary">{h.ovr}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold leading-tight">{h.name}</span>
+              {h.result === 'sold' ? (
+                <span className="flex items-center gap-1 truncate text-xs text-muted-foreground">
+                  <span
+                    className="h-1.5 w-1.5 shrink-0 rounded-full"
+                    style={{ background: h.color || '#DF2604' }}
+                  />
+                  {h.franchiseName ?? 'Team'}
+                </span>
+              ) : (
+                <span className="text-xs text-muted-foreground">Passed</span>
+              )}
+            </span>
+            {h.result === 'sold' ? (
+              <span className="font-display text-sm font-bold text-success">
+                {money(h.price ?? 0)}
+              </span>
+            ) : (
+              <XCircle weight="bold" size={16} className="text-muted-foreground" />
+            )}
+          </motion.li>
+        ))}
+      </AnimatePresence>
+    </ul>
   )
 }
 
@@ -629,7 +703,15 @@ function CommishPool({
   autoLeft: number | null
 }) {
   const [q, setQ] = React.useState('')
-  const filtered = q ? pool.filter((p) => p.name.toLowerCase().includes(q.toLowerCase())) : pool
+  const [pos, setPos] = React.useState<string | null>(null)
+  const [minOvr, setMinOvr] = React.useState(0)
+  const [sortByOvr, setSortByOvr] = React.useState(true) // default: highest overall first
+  const filterActive = !!q || !!pos || minOvr > 0 || sortByOvr
+  let filtered = pool
+  if (q) filtered = filtered.filter((p) => p.name.toLowerCase().includes(q.toLowerCase()))
+  if (pos) filtered = filtered.filter((p) => p.position === pos)
+  if (minOvr > 0) filtered = filtered.filter((p) => p.ovr >= minOvr)
+  if (sortByOvr) filtered = [...filtered].sort((a, b) => b.ovr - a.ovr)
 
   return (
     <div className="space-y-2">
@@ -646,6 +728,59 @@ function CommishPool({
           className="skeuo-inset w-full rounded-lg bg-transparent py-2 pl-8 pr-3 text-sm outline-none placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-primary/40"
         />
       </div>
+
+      {/* Filters — segmented controls */}
+      <div className="flex items-center gap-1.5">
+        <div className="skeuo-inset flex flex-1 items-center gap-0.5 rounded-lg p-0.5">
+          {[0, 80, 85, 90, 95].map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setMinOvr(v)}
+              className={cn(
+                'flex-1 rounded-md py-1 text-[11px] font-bold tabular-nums transition-colors',
+                minOvr === v
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {v === 0 ? 'All' : `${v}+`}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => setSortByOvr((s) => !s)}
+          title="Sort by overall, high to low"
+          aria-pressed={sortByOvr}
+          className={cn(
+            'grid size-[30px] shrink-0 place-items-center rounded-lg transition-colors',
+            sortByOvr
+              ? 'bg-primary text-white'
+              : 'skeuo-inset text-muted-foreground hover:text-foreground',
+          )}
+        >
+          <ArrowDown weight="bold" size={14} />
+        </button>
+      </div>
+      <div className="skeuo-inset flex items-center gap-0.5 rounded-lg p-0.5">
+        {[null, 'PG', 'SG', 'SF', 'PF', 'C'].map((p) => (
+          <button
+            key={p ?? 'all'}
+            type="button"
+            onClick={() => setPos(p)}
+            className={cn(
+              'flex-1 rounded-md py-1 text-[11px] font-bold transition-colors',
+              pos === p
+                ? 'bg-primary text-white shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {p ?? 'All'}
+          </button>
+        ))}
+      </div>
+
       {filtered.length === 0 ? (
         <p className="px-1 py-6 text-center text-sm text-muted-foreground">
           {pool.length === 0 ? 'Pool is empty.' : 'No matches.'}
@@ -653,7 +788,7 @@ function CommishPool({
       ) : (
         <ul className="space-y-1.5" data-testid="pool-list">
           {filtered.map((p, i) => {
-            const deck = !q && i < onDeck
+            const deck = !filterActive && i < onDeck
             return (
               <li key={p.id}>
                 <button

@@ -2,11 +2,21 @@ import { withPayload } from '@payloadcms/next/withPayload'
 import type { NextConfig } from 'next'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { createRequire } from 'module'
 
 const __filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(__filename)
 
+// App version — the single source of truth is package.json (kept in lockstep
+// with package-lock.json). Exposed as an env var so the footer stamp on every
+// page reflects exactly what's deployed. Bump the version → the stamp updates.
+const require = createRequire(import.meta.url)
+const { version: appVersion } = require('./package.json') as { version: string }
+
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_APP_VERSION: appVersion,
+  },
   images: {
     localPatterns: [
       { pathname: '/api/media/file/**' },

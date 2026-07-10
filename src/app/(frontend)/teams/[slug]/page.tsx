@@ -8,7 +8,7 @@ import { DbErrorToast } from '@/components/db-error-toast'
 import { PageSkeleton } from '@/components/skeletons'
 import { PlayerCard } from '@/components/player-card'
 
-export const revalidate = 3600 // cached; purged on-demand via Payload hooks (src/lib/revalidate.ts)
+export const dynamic = 'force-dynamic' // never cache a transient DB blip (would be served for the whole revalidate window)
 
 // Prerender every team page at build so they're static + ISR-cached. New teams
 // still render on-demand (dynamicParams defaults to true) and then cache.

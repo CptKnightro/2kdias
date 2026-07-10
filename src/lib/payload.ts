@@ -7,9 +7,19 @@ export const getPayloadClient = async () => getPayload({ config: await config })
 // Postgres/pg connection-failure SQLSTATEs + Node socket errnos. These are
 // *transient* — the query never reached a result, so a fresh attempt is safe.
 const TRANSIENT_DB_CODES = new Set([
-  'ECONNRESET', 'ECONNREFUSED', 'ETIMEDOUT', 'EPIPE', 'ENETUNREACH', 'EAI_AGAIN',
-  '08000', '08001', '08003', '08004', '08006', // connection_exception family
-  '57P01', '57P03', // admin_shutdown / cannot_connect_now
+  'ECONNRESET',
+  'ECONNREFUSED',
+  'ETIMEDOUT',
+  'EPIPE',
+  'ENETUNREACH',
+  'EAI_AGAIN',
+  '08000',
+  '08001',
+  '08003',
+  '08004',
+  '08006', // connection_exception family
+  '57P01',
+  '57P03', // admin_shutdown / cannot_connect_now
   '53300', // too_many_connections (pooler saturated)
   'XX000', // internal_error (Supabase pooler emits this when overloaded)
 ])
@@ -32,7 +42,7 @@ export function isTransientDbError(err: unknown): boolean {
  * single failure shouldn't dump the user to a skeleton — a short backoff almost
  * always lands. Only transient connection errors retry; real errors throw at once.
  */
-export async function withDbRetry<T>(fn: () => Promise<T>, tries = 3): Promise<T> {
+export async function withDbRetry<T>(fn: () => Promise<T>, tries = 4): Promise<T> {
   let lastErr: unknown
   for (let attempt = 1; attempt <= tries; attempt++) {
     try {
@@ -40,7 +50,10 @@ export async function withDbRetry<T>(fn: () => Promise<T>, tries = 3): Promise<T
     } catch (err) {
       lastErr = err
       if (attempt === tries || !isTransientDbError(err)) throw err
-      await new Promise((r) => setTimeout(r, 120 * attempt)) // 120ms, 240ms
+      // Escalating backoff (150ms → 300ms → 600ms). A stale connection on a
+      // thawed serverless instance usually succeeds on the 2nd attempt (fresh
+      // socket); a briefly-saturated pooler needs a moment longer.
+      await new Promise((r) => setTimeout(r, Math.min(600, 150 * 2 ** (attempt - 1))))
     }
   }
   throw lastErr

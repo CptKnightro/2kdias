@@ -21,7 +21,7 @@ import {
 import type { RecentMatch } from '@/components/home/recent-matches'
 import type { Option } from '@/components/commissioner/fields'
 
-export const revalidate = 3600 // cached; purged on-demand via Payload hooks (src/lib/revalidate.ts)
+export const dynamic = 'force-dynamic' // never cache a transient DB blip (would be served for the whole revalidate window)
 
 const fmtDate = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''

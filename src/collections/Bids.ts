@@ -16,14 +16,13 @@ export const Bids: CollectionConfig = {
     delete: ({ req: { user } }) => isCommissioner(user),
   },
   hooks: {
-    // Validate against live lot state, purse, and squad cap.
+    // Validate against live lot state + purse (no squad cap in this league).
     beforeValidate: [
       async ({ data, req, operation }) => {
         if (operation !== 'create' || !data) return data
         const { payload, user } = req
 
-        const auctionId =
-          typeof data.auction === 'object' ? data.auction?.id : data.auction
+        const auctionId = typeof data.auction === 'object' ? data.auction?.id : data.auction
         if (!auctionId) throw new APIError('Bid must reference an auction.', 400)
 
         const auction = await payload.findByID({
@@ -40,27 +39,27 @@ export const Bids: CollectionConfig = {
         // Pin the bid to the current lot's player.
         data.player = auction.currentPlayer
 
-        const franchiseId =
-          typeof data.franchise === 'object' ? data.franchise?.id : data.franchise
+        const franchiseId = typeof data.franchise === 'object' ? data.franchise?.id : data.franchise
         if (!franchiseId) throw new APIError('Bid must reference a franchise.', 400)
 
         // A signed-in owner may only bid for their own franchise. Public
         // bidders are login-free — they pick a team on the auction page — so
         // there is no user to pin against; the picked franchise stands.
         if (user && !isCommissioner(user)) {
-          const ownFid =
-            typeof user?.franchise === 'object' ? user?.franchise?.id : user?.franchise
-          if (ownFid !== franchiseId)
-            throw new APIError('You can only bid for your own team.', 403)
+          const ownFid = typeof user?.franchise === 'object' ? user?.franchise?.id : user?.franchise
+          if (ownFid !== franchiseId) throw new APIError('You can only bid for your own team.', 403)
         }
 
         const increment = auction.minIncrement ?? 1
         const floor = auction.currentHighBid ?? 0
-        const minValid = auction.currentHighFranchise ? floor + increment : Math.max(floor, increment)
+        const minValid = auction.currentHighFranchise
+          ? floor + increment
+          : Math.max(floor, increment)
         if ((data.amount ?? 0) < minValid)
           throw new APIError(`Bid must be at least ${minValid}.`, 400)
 
-        // Purse + squad-cap checks.
+        // Purse check — the league has no squad-size cap, so bids are only
+        // limited by a team's remaining wallet.
         const franchise = await payload.findByID({
           collection: 'franchises',
           id: franchiseId,
@@ -70,14 +69,6 @@ export const Bids: CollectionConfig = {
         const remaining = (franchise.purseTotal ?? 0) - (franchise.purseSpent ?? 0)
         if ((data.amount ?? 0) > remaining)
           throw new APIError(`Not enough purse (${remaining} remaining).`, 400)
-
-        const roster = await payload.count({
-          collection: 'players',
-          where: { franchise: { equals: franchiseId } },
-          req,
-        })
-        if (roster.totalDocs >= (auction.squadCap ?? 99))
-          throw new APIError('Squad is full.', 400)
 
         data.bidder = user?.id
         return data

@@ -5,17 +5,15 @@ import { getPayloadClient, withDbRetry } from '@/lib/payload'
 import { PageHeader, EmptyState } from '@/components/ui-bits'
 import { DbErrorToast } from '@/components/db-error-toast'
 import { PageSkeleton } from '@/components/skeletons'
-import {
-  AuctionRoom,
-  type AuctionView,
-  type AuctionFranchise,
-  type Me,
-  type PoolPlayer,
-  type HistoryPlayer,
-} from '@/components/auction-room'
+import { AuctionRoom, type Me, type HistoryPlayer } from '@/components/auction-room'
 import { AuctionResults } from '@/components/auction/auction-results'
-import { RetentionPhase, type RetentionTeam, type RosterPlayer } from '@/components/auction/retention-phase'
-import type { Player } from '@/payload-types'
+import {
+  RetentionPhase,
+  type RetentionTeam,
+  type RosterPlayer,
+} from '@/components/auction/retention-phase'
+import { buildAuctionView } from '@/lib/auction'
+import type { Player, Auction } from '@/payload-types'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Auction Room' }
@@ -47,7 +45,8 @@ export default async function AuctionPage() {
       })
       const latest =
         live.docs[0] ??
-        (await payload.find({ collection: 'auctions', sort: '-createdAt', limit: 1, depth: 1 })).docs[0]
+        (await payload.find({ collection: 'auctions', sort: '-createdAt', limit: 1, depth: 1 }))
+          .docs[0]
 
       const me: Me = user
         ? {
@@ -154,17 +153,12 @@ export default async function AuctionPage() {
         )
       }
 
-      // ── Derive pool (available) + history (resolved) from the queue ───────
-      const currentPlayerId =
-        typeof latest.currentPlayer === 'object' ? latest.currentPlayer?.id : latest.currentPlayer
+      // ── Derive history (resolved lots) from the queue — used by the results
+      //    recap below. The live view builds its own pool/history. ───────────
       const queuePlayers = (Array.isArray(latest.queue) ? latest.queue : []).filter(
         (q): q is Player => typeof q === 'object' && q !== null,
       )
       const resolved = (p: Player) => p.status === 'sold' || p.status === 'unsold'
-
-      const pool: PoolPlayer[] = queuePlayers
-        .filter((p) => !resolved(p) && p.id !== currentPlayerId)
-        .map((p) => ({ id: String(p.id), name: p.name, ovr: p.ovr, position: p.position }))
 
       const history: HistoryPlayer[] = queuePlayers
         .filter(resolved)
@@ -219,61 +213,7 @@ export default async function AuctionPage() {
       if (latest.status !== 'live') return renderEmpty('Setting up the next auction…')
 
       // ── Phase: LIVE ───────────────────────────────────────────────────────
-      const rosterCounts = await Promise.all(
-        franchiseRes.docs.map((f) =>
-          payload.count({ collection: 'players', where: { franchise: { equals: f.id } } }),
-        ),
-      )
-      const franchises: AuctionFranchise[] = franchiseRes.docs.map((f, i) => ({
-        id: String(f.id),
-        name: f.name,
-        color: f.color,
-        purseTotal: f.purseTotal ?? 0,
-        purseSpent: f.purseSpent ?? 0,
-        rosterCount: rosterCounts[i].totalDocs,
-      }))
-
-      const bidRes = await payload.find({
-        collection: 'bids',
-        where: { auction: { equals: latest.id } },
-        sort: '-createdAt',
-        limit: 8,
-        depth: 1,
-      })
-      const recentBids = bidRes.docs.map((b) => ({
-        id: String(b.id),
-        amount: b.amount,
-        franchiseName: typeof b.franchise === 'object' ? (b.franchise?.name ?? '—') : '—',
-      }))
-
-      const cp = typeof latest.currentPlayer === 'object' ? latest.currentPlayer : null
-      const hf = typeof latest.currentHighFranchise === 'object' ? latest.currentHighFranchise : null
-
-      const view: AuctionView = {
-        id: String(latest.id),
-        kind: latest.kind === 'main' ? 'main' : 'mid',
-        status: latest.status ?? 'scheduled',
-        lotStatus: latest.lotStatus ?? 'idle',
-        currentHighBid: latest.currentHighBid ?? null,
-        minIncrement: latest.minIncrement ?? 1,
-        currencySymbol: sym,
-        currencySuffix: suf,
-        currentPlayer: cp
-          ? {
-              id: String(cp.id),
-              name: cp.name,
-              ovr: cp.ovr,
-              position: cp.position,
-              nbaTeam: cp.nbaTeam,
-              category: cp.category,
-            }
-          : null,
-        highFranchiseId: hf ? String(hf.id) : null,
-        highFranchiseName: hf?.name ?? null,
-        recentBids,
-        pool,
-        history,
-      }
+      const { view, franchises } = await buildAuctionView(payload, latest as Auction, sym, suf)
 
       return (
         <div>
@@ -282,7 +222,9 @@ export default async function AuctionPage() {
             icon={Gavel}
             subtitle={`${kindLabel} auction · Live now · ${latest.title}`}
           />
-          <AuctionRoom auction={view} franchises={franchises} me={me} canEnd={!!isCommish} />
+          {/* Public bidder room — past on the left, up-next on the right, sign
+              in + bid in the middle. No auctioneer controls here. */}
+          <AuctionRoom auction={view} franchises={franchises} me={me} variant="public" />
         </div>
       )
     })

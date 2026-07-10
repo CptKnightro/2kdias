@@ -47,6 +47,36 @@ export async function placeBid(input: {
   }
 }
 
+/**
+ * Commissioner: set each team's wallet (purseTotal) before an auction. Amounts
+ * are clamped to ≥ 0. Lets the commissioner give every team whatever budget they
+ * want, per team.
+ */
+export async function setTeamPurses(input: {
+  teams: { id: string; purseTotal: number }[]
+}): Promise<Result> {
+  const { payload, user } = await getUser()
+  if (!isCommissioner(user)) return { ok: false, error: 'Commissioner only.' }
+  try {
+    for (const t of input.teams) {
+      const amount = Math.max(0, Math.round(Number(t.purseTotal) || 0))
+      await payload.update({
+        collection: 'franchises',
+        id: Number(t.id),
+        data: { purseTotal: amount },
+        user,
+      })
+    }
+    revalidatePath('/auction')
+    revalidatePath('/commissioner/auction')
+    revalidatePath('/teams')
+    revalidatePath('/standings')
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
 /** Commissioner: put a player on the block (resets the lot). */
 export async function setLot(auctionId: string, playerId: string): Promise<Result> {
   const { payload, user } = await getUser()
@@ -81,7 +111,12 @@ export async function setLotStatus(
   const { payload, user } = await getUser()
   if (!isCommissioner(user)) return { ok: false, error: 'Commissioner only.' }
   try {
-    await payload.update({ collection: 'auctions', id: Number(auctionId), data: { lotStatus }, user })
+    await payload.update({
+      collection: 'auctions',
+      id: Number(auctionId),
+      data: { lotStatus },
+      user,
+    })
     revalidatePath('/auction')
     return { ok: true }
   } catch (e) {
@@ -94,11 +129,13 @@ export async function sellLot(auctionId: string): Promise<Result> {
   const { payload, user } = await getUser()
   if (!isCommissioner(user)) return { ok: false, error: 'Commissioner only.' }
   try {
-    const auction = await payload.findByID({ collection: 'auctions', id: Number(auctionId), depth: 0 })
+    const auction = await payload.findByID({
+      collection: 'auctions',
+      id: Number(auctionId),
+      depth: 0,
+    })
     const playerId =
-      typeof auction.currentPlayer === 'object'
-        ? auction.currentPlayer?.id
-        : auction.currentPlayer
+      typeof auction.currentPlayer === 'object' ? auction.currentPlayer?.id : auction.currentPlayer
     const franchiseId =
       typeof auction.currentHighFranchise === 'object'
         ? auction.currentHighFranchise?.id
@@ -251,7 +288,8 @@ export async function setRetention(input: {
     if (isCommissioner(user)) {
       fid = input.franchiseId ? Number(input.franchiseId) : null
     } else {
-      fid = typeof user.franchise === 'object' ? (user.franchise?.id ?? null) : (user.franchise ?? null)
+      fid =
+        typeof user.franchise === 'object' ? (user.franchise?.id ?? null) : (user.franchise ?? null)
       if (input.franchiseId && Number(input.franchiseId) !== fid)
         return { ok: false, error: 'You can only retain your own team.' }
     }
@@ -299,7 +337,11 @@ export async function startMainAuction(auctionId: string): Promise<Result> {
   const { payload, user } = await getUser()
   if (!isCommissioner(user)) return { ok: false, error: 'Commissioner only.' }
   try {
-    const auction = await payload.findByID({ collection: 'auctions', id: Number(auctionId), depth: 0 })
+    const auction = await payload.findByID({
+      collection: 'auctions',
+      id: Number(auctionId),
+      depth: 0,
+    })
     if (auction.kind !== 'main') return { ok: false, error: 'Not a main auction.' }
     const limit = auction.retentionLimit ?? 3
 
@@ -339,7 +381,10 @@ export async function startMainAuction(auctionId: string): Promise<Result> {
     })
     await payload.create({
       collection: 'activity',
-      data: { type: 'auction', message: `Main auction is live — ${queue.length} players in the pool.` },
+      data: {
+        type: 'auction',
+        message: `Main auction is live — ${queue.length} players in the pool.`,
+      },
       overrideAccess: true,
     })
     revalidatePath('/auction')
@@ -351,6 +396,24 @@ export async function startMainAuction(auctionId: string): Promise<Result> {
 }
 
 /** Commissioner: start a MID auction over the current free-agent pool. */
+/** Flat purse top-up granted to every team when a mid auction opens (on top of leftover). */
+const MID_AUCTION_GRANT = 100
+
+/** Add `delta` to every franchise's purseTotal — used to grant or revert the mid wallet. */
+async function applyMidGrant(payload: Payload, delta: number): Promise<void> {
+  const franchises = await payload.find({ collection: 'franchises', limit: 200, depth: 0 })
+  await Promise.all(
+    franchises.docs.map((f) =>
+      payload.update({
+        collection: 'franchises',
+        id: f.id,
+        data: { purseTotal: Math.max(0, (f.purseTotal ?? 0) + delta) },
+        overrideAccess: true,
+      }),
+    ),
+  )
+}
+
 export async function createMidAuction(input: { title: string }): Promise<Result> {
   const { payload, user } = await getUser()
   if (!isCommissioner(user)) return { ok: false, error: 'Commissioner only.' }
@@ -362,23 +425,44 @@ export async function createMidAuction(input: { title: string }): Promise<Result
       where: { status: { equals: 'live' } },
       data: { status: 'ended', lotStatus: 'idle', currentPlayer: null },
     })
-    // Fresh pool: clear any stale sold/unsold flags so the board starts clean.
+    // Fresh pool: clear only players that actually carry a stale sold/unsold flag.
+    // Updating all ~328 every time ran the per-doc hook 328× (~100s); this skips
+    // the already-clean ones, cutting it to a fraction of a second.
     await payload.update({
       collection: 'players',
-      where: { id: { in: queue } },
+      where: {
+        and: [
+          { id: { in: queue } },
+          { or: [{ status: { not_equals: 'available' } }, { soldPrice: { exists: true } }] },
+        ],
+      },
       data: { status: 'available', soldPrice: null },
     })
     await payload.create({
       collection: 'auctions',
-      data: { title: input.title || 'Mid Auction', kind: 'mid', status: 'live', queue, lotStatus: 'idle' },
+      data: {
+        title: input.title || 'Mid Auction',
+        kind: 'mid',
+        status: 'live',
+        queue,
+        lotStatus: 'idle',
+        minIncrement: 5, // mid auctions bid in steps of 5 (min bid 5)
+      },
       user,
     })
+    // Grant every team a fresh mid-auction wallet on top of their leftover purse.
+    // Reverted on delete only if the auction goes unused (see deleteAuction).
+    await applyMidGrant(payload, MID_AUCTION_GRANT)
     await payload.create({
       collection: 'activity',
-      data: { type: 'auction', message: `Mid auction is live — ${queue.length} free agents up for grabs.` },
+      data: {
+        type: 'auction',
+        message: `Mid auction is live — ${queue.length} free agents up for grabs. Every team gets +${MID_AUCTION_GRANT} to spend.`,
+      },
       overrideAccess: true,
     })
     revalidatePath('/auction')
+    revalidatePath('/commissioner/auction')
     revalidatePath('/')
     return { ok: true }
   } catch (e) {
@@ -429,6 +513,48 @@ export async function clearAuction(auctionId: string): Promise<Result> {
       user,
     })
     revalidatePath('/auction')
+    revalidatePath('/')
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+/**
+ * Commissioner: delete an auction entirely (its record + bids). For a mid
+ * auction the wallet grant is reverted ONLY when no team bought anyone; once a
+ * single purchase has happened the grant money stays with every team.
+ */
+export async function deleteAuction(auctionId: string): Promise<Result> {
+  const { payload, user } = await getUser()
+  if (!isCommissioner(user)) return { ok: false, error: 'Commissioner only.' }
+  try {
+    const id = Number(auctionId)
+    const auction = await payload.findByID({ collection: 'auctions', id, depth: 0 })
+
+    if (auction.kind === 'mid') {
+      const queueIds = (auction.queue ?? []).map((q) =>
+        typeof q === 'object' && q ? (q as { id: number }).id : (q as number),
+      )
+      let purchases = 0
+      if (queueIds.length) {
+        const bought = await payload.find({
+          collection: 'players',
+          where: { and: [{ id: { in: queueIds } }, { franchise: { exists: true } }] },
+          limit: 0,
+          depth: 0,
+        })
+        purchases = bought.totalDocs
+      }
+      // Unused mid auction → take the grant back off every team.
+      if (purchases === 0) await applyMidGrant(payload, -MID_AUCTION_GRANT)
+    }
+
+    await payload.delete({ collection: 'bids', where: { auction: { equals: id } } })
+    await payload.delete({ collection: 'auctions', where: { id: { equals: id } } })
+
+    revalidatePath('/auction')
+    revalidatePath('/commissioner/auction')
     revalidatePath('/')
     return { ok: true }
   } catch (e) {

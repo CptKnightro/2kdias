@@ -4,7 +4,7 @@ import { PageHeader, EmptyState, GlassPanel } from '@/components/ui-bits'
 import { DbErrorToast } from '@/components/db-error-toast'
 import { PageSkeleton } from '@/components/skeletons'
 
-export const revalidate = 3600 // cached; purged on-demand via Payload hooks (src/lib/revalidate.ts)
+export const dynamic = 'force-dynamic' // never cache a transient DB blip (would be served for the whole revalidate window)
 export const metadata = { title: 'Records & Hall of Fame' }
 
 export default async function RecordsPage() {
