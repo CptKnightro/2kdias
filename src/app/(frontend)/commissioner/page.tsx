@@ -49,7 +49,7 @@ export default async function CommissionerDashboard() {
     { label: 'Players', value: stats.players, icon: IdentificationCard, href: '/commissioner/players' },
     { label: 'Players Sold', value: stats.sold, icon: Gavel, href: '/commissioner/players' },
     { label: 'Tournaments', value: stats.tournaments, icon: Trophy, href: '/commissioner/tournaments' },
-    { label: 'Matches', value: stats.matches, icon: ListNumbers, href: '/commissioner/tournaments' },
+    { label: 'Matches', value: stats.matches, icon: ListNumbers, href: '/commissioner/matches' },
     { label: 'Trades', value: stats.trades, icon: ArrowsLeftRight, href: '/commissioner/trades' },
   ]
 
@@ -57,6 +57,7 @@ export default async function CommissionerDashboard() {
     { label: 'Manage Teams', desc: 'Create & edit franchises, owners, purses', icon: UsersIcon, href: '/commissioner/teams' },
     { label: 'Manage Players', desc: 'Ratings, status, assign to teams, awards', icon: IdentificationCard, href: '/commissioner/players' },
     { label: 'Tournaments & Scores', desc: 'Run competitions, enter match results', icon: Trophy, href: '/commissioner/tournaments' },
+    { label: 'Fix Match Results', desc: 'Edit scores or delete logged matches', icon: ListNumbers, href: '/commissioner/matches' },
     { label: 'Record a Trade', desc: 'Move players between franchises', icon: ArrowsLeftRight, href: '/commissioner/trades' },
   ]
 

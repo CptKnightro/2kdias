@@ -19,8 +19,6 @@ Rank,Player,Team,Category,Position,OVR
 18,Julius Erving,All-Time Philadelphia 76ers,All-Time Legend,SF,97
 19,Hakeem Olajuwon,All-Time Houston Rockets,All-Time Legend,C,97
 20,Giannis Antetokounmpo,Milwaukee Bucks,Current + All-Time,PF,97
-21,Giannis,Eastern Conference All-Stars,All-Star,PF,97
-22,Kareem,All-Decade 1970s,All-Decade,C,97
 23,Stephen Curry,All-Decade 2010s,All-Decade,PG,97
 24,Karl Malone,All-Time Utah Jazz,All-Time Legend,PF,96
 25,John Stockton,All-Time Utah Jazz,All-Time Legend,PG,96
@@ -45,9 +43,8 @@ Rank,Player,Team,Category,Position,OVR
 44,Donovan Mitchell,Cleveland Cavaliers,Current,SG,93
 45,Anthony Davis,Dallas Mavericks,Current,PF,93
 46,Jalen Brunson,New York Knicks,Current,PG,93
-47,Tyrese Halliburton,Indiana Pacers,Current,PG,93
+47,Tyrese Haliburton,Indiana Pacers,Current,PG,93
 48,Rick Barry,All-Time Golden State Warriors,All-Time Legend,SF,93
-49,Tyrese Haliburton,Eastern Conference All-Stars,All-Star,PG,93
 50,Moses Malone,All-Decade 1980s,All-Decade,C,93
 51,Gary Payton,All-Time Seattle SuperSonics,All-Time Legend,PG,92
 52,Vince Carter,All-Time Toronto Raptors,All-Time Legend,SG,92
@@ -58,7 +55,7 @@ Rank,Player,Team,Category,Position,OVR
 57,Kawhi Leonard,Los Angeles Clippers,Current,SF,92
 58,Cade Cunningham,Detroit Pistons,Current,PG,92
 59,Joel Embiid,Philadelphia 76ers,Current,C,92
-60,Karl Anthony-Towns,New York Knicks,Current,C,92
+60,Karl-Anthony Towns,New York Knicks,Current,C,92
 61,Steve Nash,All-Decade 2000s,All-Decade,PG,92
 62,John Havlicek,All-Time Boston Celtics,All-Time Legend,SF,91
 63,Isiah Thomas,All-Time Detroit Pistons,All-Time Legend,PG,91
@@ -258,7 +255,7 @@ Rank,Player,Team,Category,Position,OVR
 257,Dell Curry,All-Time Charlotte Hornets,All-Time Legend,SG,82
 258,Tom Gola,All-Time Philadelphia 76ers,All-Time Legend,PG,82
 259,Lu Dort,Oklahoma City Thunder,Current,SG,81
-260,Herb Jones,New Orleans Pelicans,Current,SF,81
+260,Herbert Jones,New Orleans Pelicans,Current,SF,81
 261,Jrue Holiday,Portland Trail Blazers,Current,SG,81
 262,Dejounte Murray,New Orleans Pelicans,Current,PG,81
 263,CJ McCollum,Washington Wizards,Current,SG,81
@@ -316,7 +313,6 @@ Rank,Player,Team,Category,Position,OVR
 315,Mark Williams,Charlotte Hornets,Current,C,79
 316,Bismack Biyombo,Phoenix Suns,Current,C,79
 317,Torrey Craig,Phoenix Suns,Current,SF,79
-318,Herbert Jones,New Orleans Pelicans,Current,SF,79
 319,Mike Conley,Utah Jazz,Current,PG,79
 320,Spencer Dinwiddie,Dallas Mavericks,Current,PG,79
 321,De'Andre Hunter,Atlanta Hawks,Current,SF,79

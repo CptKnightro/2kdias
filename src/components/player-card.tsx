@@ -1,6 +1,9 @@
 import { cn } from '@/lib/utils'
+import { NbaTeamLogo } from '@/components/nba-team-logo'
 
 type Size = 'sm' | 'md' | 'lg'
+
+const LOGO_SIZE: Record<Size, number> = { sm: 15, md: 18, lg: 24 }
 
 export interface PlayerCardData {
   name: string
@@ -59,7 +62,10 @@ export function PlayerCard({
           {player.name}
         </p>
         {player.nbaTeam && (
-          <span className={cn('truncate text-muted-foreground', s.sub)}>{player.nbaTeam}</span>
+          <span className={cn('mt-0.5 flex items-center gap-1.5 text-muted-foreground', s.sub)}>
+            <NbaTeamLogo team={player.nbaTeam} size={LOGO_SIZE[size]} />
+            <span className="truncate">{player.nbaTeam}</span>
+          </span>
         )}
       </div>
     </div>

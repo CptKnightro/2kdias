@@ -285,7 +285,12 @@ function SeriesLogger({
                     <span className="size-2 shrink-0 rounded-full" style={{ background: m.aColor }} />
                     <span className="truncate">{m.aLabel}</span>
                   </span>
-                  <span className="my-0.5 block text-[10px] font-bold uppercase text-muted-foreground">
+                  <span
+                    className={cn(
+                      'my-0.5 block text-[10px] font-bold uppercase',
+                      active ? 'text-white/70' : 'text-muted-foreground',
+                    )}
+                  >
                     vs
                   </span>
                   <span className="flex items-center gap-1.5 text-sm font-bold">
@@ -295,9 +300,11 @@ function SeriesLogger({
                   <span
                     className={cn(
                       'mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
-                      live
-                        ? 'bg-primary/15 text-primary'
-                        : 'bg-foreground/10 text-muted-foreground',
+                      active
+                        ? 'bg-black/30 text-white'
+                        : live
+                          ? 'bg-primary/15 text-primary'
+                          : 'bg-foreground/10 text-muted-foreground',
                     )}
                   >
                     {live ? `Series ${live.index} · ${live.winsA}–${live.winsB}` : 'New series'}
@@ -324,8 +331,9 @@ function SeriesLogger({
           )}
         </p>
 
-        {/* Score entry — duos are fixed by the matchup, just enter the game */}
-        <div className="grid items-start gap-4 sm:grid-cols-[1fr_auto_1fr]">
+        {/* Score entry — duos are fixed by the matchup, just enter the game.
+            Two columns at every width so the scoreboard stays aligned on phones. */}
+        <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2 sm:gap-4">
           <ScoreColumn
             label={selected.aLabel}
             color={selected.aColor}
@@ -334,7 +342,7 @@ function SeriesLogger({
             score={scoreA}
             onScore={setScoreA}
           />
-          <div className="flex items-center justify-center pt-2 font-display text-2xl font-black text-muted-foreground sm:pt-9">
+          <div className="flex items-center justify-center pt-9 font-display text-xl font-black text-muted-foreground sm:text-2xl">
             vs
           </div>
           <ScoreColumn
@@ -393,7 +401,7 @@ function ScoreColumn({
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <span className="size-2.5 shrink-0 rounded-full" style={{ background: color }} />
-        <span className="truncate font-display text-base font-black uppercase tracking-tight">
+        <span className="truncate font-display text-sm font-black uppercase tracking-tight sm:text-base">
           {label}
         </span>
       </div>

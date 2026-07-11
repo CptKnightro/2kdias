@@ -83,6 +83,37 @@ export async function isCommissionerViewer(): Promise<boolean> {
 }
 
 /**
+ * Edit a logged match's scores / walkover tag. Commissioner-only — enforced
+ * server-side via requireCommissioner(), so a normal user can't rewrite
+ * results even by calling this directly.
+ */
+export async function updateMatch(input: {
+  id: number
+  homeScore: string | number
+  awayScore: string | number
+  walkover?: boolean
+}): Promise<Result> {
+  try {
+    await requireCommissioner()
+    const homeScore = int(input.homeScore)
+    const awayScore = int(input.awayScore)
+    if (homeScore == null || awayScore == null) return { ok: false, error: 'Enter both scores' }
+    if (homeScore < 0 || awayScore < 0) return { ok: false, error: 'Scores cannot be negative' }
+
+    const payload = await getPayloadClient()
+    await payload.update({
+      collection: 'matches',
+      id: input.id,
+      data: { homeScore, awayScore, walkover: !!input.walkover },
+    })
+    purge()
+    return { ok: true, id: input.id }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+/**
  * Delete a logged match. Commissioner-only — enforced server-side via
  * requireCommissioner(), so a normal user can't remove results even by
  * calling this directly. Normal users can only log; deletion is the

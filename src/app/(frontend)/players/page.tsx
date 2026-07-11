@@ -45,7 +45,7 @@ export default async function PlayersPage() {
         <EmptyState
           icon={IdentificationCard}
           title="No players yet"
-          description="Run the seed script to import the 389-player pool from your CSV, or add players in the admin."
+          description="Run the seed script to import the player pool from your CSV, or add players in the admin."
         />
       )}
     </div>
