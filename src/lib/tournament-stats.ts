@@ -197,6 +197,8 @@ export type Series = {
   bestOf: number
   live: boolean
   games: SeriesGame[]
+  /** Index of each series game back into the input array (for edit/delete UIs). */
+  gameIndices: number[]
 }
 
 /**
@@ -220,7 +222,8 @@ export function buildSeries(
   let cur: Series | null = null
   let curKey = ''
 
-  for (const g of games) {
+  for (let i = 0; i < games.length; i++) {
+    const g = games[i]
     if (!g.a.length || !g.b.length) continue
     const kA = sideKey(g.a)
     const kB = sideKey(g.b)
@@ -248,6 +251,7 @@ export function buildSeries(
         bestOf,
         live: true,
         games: [],
+        gameIndices: [],
       }
       out.push(cur)
       curKey = matchKey
@@ -260,6 +264,7 @@ export function buildSeries(
     if (w === 'a') cur.winsA++
     else if (w === 'b') cur.winsB++
     cur.games.push({ scoreA: sA, scoreB: sB, winner: w, walkover: g.walkover })
+    cur.gameIndices.push(i)
     if (cur.winsA >= need) {
       cur.winner = 'a'
       cur.live = false
