@@ -329,7 +329,12 @@ export function buildRecords(franchises: FranchiseRow[], matches: RawMatch[]): R
 // ── Scoring timeline ────────────────────────────────────────────────────────
 
 export type TimelineSeries = { id: number; owner: string; color: string }
-export type TimelinePoint = { label: string; [owner: string]: number | string }
+export type TimelinePoint = {
+  label: string
+  date: string
+  game: number
+  [owner: string]: number | string
+}
 export type Timeline = { series: TimelineSeries[]; data: TimelinePoint[] }
 
 /** Cumulative points scored per owner across the season, one point per match. */
@@ -354,7 +359,8 @@ export function buildTimeline(franchises: FranchiseRow[], matches: RawMatch[]): 
   played.forEach((m, idx) => {
     cum.set(m.homeId, (cum.get(m.homeId) ?? 0) + m.homeScore)
     cum.set(m.awayId, (cum.get(m.awayId) ?? 0) + m.awayScore)
-    const point: TimelinePoint = { label: `${fmtDate(m.playedAt)}${played.length > 12 ? '' : ` · G${idx + 1}`}` }
+    const date = fmtDate(m.playedAt)
+    const point: TimelinePoint = { label: `${date} · G${idx + 1}`, date, game: idx + 1 }
     for (const s of series) point[ownerOf.get(s.id) as string] = cum.get(s.id) ?? 0
     data.push(point)
   })
