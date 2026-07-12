@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_APP_VERSION: appVersion,
   },
+  async redirects() {
+    // The Records page became Trophies — keep old links working.
+    return [{ source: '/records', destination: '/trophies', permanent: false }]
+  },
   images: {
     localPatterns: [
       { pathname: '/api/media/file/**' },

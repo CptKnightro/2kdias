@@ -20,7 +20,9 @@ export function ChartCard({
   fill?: boolean
 }) {
   return (
-    <GlassPanel className={cn('p-5', fill && 'flex h-full flex-col', className)}>
+    // min-w-0 lets the card shrink inside grid tracks (grid items default to
+    // min-width:auto), so wide bodies scroll internally instead of overflowing.
+    <GlassPanel className={cn('min-w-0 p-5', fill && 'flex h-full flex-col', className)}>
       <div className="mb-4 flex items-center gap-2">
         <IconCmp weight="bold" size={16} className="text-primary" />
         <h3 className="font-display text-sm font-black uppercase tracking-wide">{title}</h3>

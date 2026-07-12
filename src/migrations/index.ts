@@ -3,6 +3,7 @@ import * as migration_20260627_180000_matches_walkover from './20260627_180000_m
 import * as migration_20260627_200000_franchises_owner_name from './20260627_200000_franchises_owner_name'
 import * as migration_20260628_010000_trades_expiry from './20260628_010000_trades_expiry'
 import * as migration_20260628_020000_trades_loan_window from './20260628_020000_trades_loan_window'
+import * as migration_20260712_150000_trophies from './20260712_150000_trophies'
 
 export const migrations = [
   {
@@ -29,5 +30,10 @@ export const migrations = [
     up: migration_20260628_020000_trades_loan_window.up,
     down: migration_20260628_020000_trades_loan_window.down,
     name: '20260628_020000_trades_loan_window',
+  },
+  {
+    up: migration_20260712_150000_trophies.up,
+    down: migration_20260712_150000_trophies.down,
+    name: '20260712_150000_trophies',
   },
 ]

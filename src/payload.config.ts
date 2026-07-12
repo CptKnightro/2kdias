@@ -16,6 +16,7 @@ import { Trades } from './collections/Trades'
 import { Tournaments } from './collections/Tournaments'
 import { Matches } from './collections/Matches'
 import { Awards } from './collections/Awards'
+import { Trophies } from './collections/Trophies'
 import { Activity } from './collections/Activity'
 import { LeagueSettings } from './globals/LeagueSettings'
 import { withRevalidation, withGlobalRevalidation } from './lib/revalidate'
@@ -30,7 +31,7 @@ const ALL_PAGES = [
   TEAM_PAGE,
   '/players',
   '/standings',
-  '/records',
+  '/trophies',
   '/trades',
   '/matches',
   '/tournaments',
@@ -78,8 +79,9 @@ export default buildConfig({
     Bids, // live auction page is dynamic — no cache to purge
     withRevalidation(Trades, ['/', '/trades', '/players', '/teams', TEAM_PAGE]),
     withRevalidation(Tournaments, ['/', '/tournaments', TOURNEY_PAGE, '/standings']),
-    withRevalidation(Matches, ['/', '/standings', '/records', '/matches', TOURNEY_PAGE]),
-    withRevalidation(Awards, ['/', '/records']),
+    withRevalidation(Matches, ['/', '/standings', '/matches', TOURNEY_PAGE]),
+    withRevalidation(Awards, ['/']),
+    withRevalidation(Trophies, ['/', '/trophies']),
     withRevalidation(Activity, ['/']),
   ],
   // Currency name/symbol from league settings renders site-wide — purge all.

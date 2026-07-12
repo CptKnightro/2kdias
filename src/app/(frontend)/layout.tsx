@@ -55,9 +55,12 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className={`dark ${inter.variable} ${saira.variable}`}>
-      <body className="flex min-h-screen flex-col antialiased">
+      {/* dvh (not vh) so mobile browser toolbars don't create phantom scroll past the footer */}
+      <body className="flex min-h-dvh flex-col antialiased">
         <SiteNav />
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-16 pt-6">{children}</main>
+        <main className="mx-auto w-full max-w-[1800px] flex-1 px-4 pb-10 pt-6 sm:px-6 lg:px-10 2xl:px-14">
+          {children}
+        </main>
         <footer className="border-t border-border/40 py-4 text-center">
           <span className="font-mono text-[11px] font-medium tracking-wide text-muted-foreground/50">
             2KDais · v{APP_VERSION}

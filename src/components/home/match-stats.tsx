@@ -61,21 +61,26 @@ export function StatTiles({ stats, records }: { stats: TeamStat[]; records: Reco
 
 /** Full league table, ordered by wins then point differential. Owner name leads each row. */
 export function StandingsTable({ stats }: { stats: TeamStat[] }) {
-  const table = [...stats].filter((s) => s.games > 0).sort(standingsSort)
+  // Every franchise gets a row — a team that hasn't played yet (e.g. Lakers)
+  // still shows its 0-0 status, sorted below anyone who's logged a game.
+  const table = [...stats].sort(
+    (a, b) => (b.games > 0 ? 1 : 0) - (a.games > 0 ? 1 : 0) || standingsSort(a, b),
+  )
   if (table.length === 0) return null
 
   return (
     <GlassPanel className="overflow-hidden p-0">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[26rem] text-sm">
+        {/* PF/PA hide on phones so the table fits without a hidden horizontal scroll */}
+        <table className="w-full text-sm sm:min-w-[26rem]">
           <thead>
             <tr className="border-b border-border text-left text-[11px] uppercase tracking-wider text-muted-foreground">
               <th className="px-4 py-2.5 font-semibold">Owner</th>
               <th className="px-2 py-2.5 text-center font-semibold">GP</th>
               <th className="px-2 py-2.5 text-center font-semibold">W</th>
               <th className="px-2 py-2.5 text-center font-semibold">L</th>
-              <th className="px-2 py-2.5 text-center font-semibold">PF</th>
-              <th className="px-2 py-2.5 text-center font-semibold">PA</th>
+              <th className="hidden px-2 py-2.5 text-center font-semibold sm:table-cell">PF</th>
+              <th className="hidden px-2 py-2.5 text-center font-semibold sm:table-cell">PA</th>
               <th className="px-4 py-2.5 text-center font-semibold">Diff</th>
             </tr>
           </thead>
@@ -100,8 +105,8 @@ export function StandingsTable({ stats }: { stats: TeamStat[] }) {
                   <td className="px-2 py-2.5 text-center tabular-nums text-muted-foreground">{s.games}</td>
                   <td className="px-2 py-2.5 text-center font-bold tabular-nums">{s.wins}</td>
                   <td className="px-2 py-2.5 text-center tabular-nums text-muted-foreground">{s.losses}</td>
-                  <td className="px-2 py-2.5 text-center tabular-nums">{s.pointsFor}</td>
-                  <td className="px-2 py-2.5 text-center tabular-nums text-muted-foreground">{s.pointsAgainst}</td>
+                  <td className="hidden px-2 py-2.5 text-center tabular-nums sm:table-cell">{s.pointsFor}</td>
+                  <td className="hidden px-2 py-2.5 text-center tabular-nums text-muted-foreground sm:table-cell">{s.pointsAgainst}</td>
                   <td
                     className={`px-4 py-2.5 text-center font-bold tabular-nums ${
                       diff > 0 ? 'text-success' : diff < 0 ? 'text-destructive' : 'text-muted-foreground'

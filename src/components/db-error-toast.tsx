@@ -22,14 +22,18 @@ export function DbErrorToast({
   React.useEffect(() => {
     toast.error(message, { id: 'db-unreachable', description })
 
-    // Auto-retry a few times with backoff (~1.5s, 3s, 6s). A successful render
-    // swaps in real content and unmounts this, cancelling the pending timer.
+    // Keep retrying until a render succeeds — the moment the DB is reachable the
+    // page swaps in real content and unmounts this, cancelling the timer. Right
+    // after a deploy the Supabase pooler can stay saturated for longer than a
+    // few seconds, so a fixed 3-try budget left the page stuck on skeletons
+    // until a manual reload. Instead we back off (1.5s → capped at 8s) and keep
+    // trying for a few minutes, so a post-deploy blip always heals itself.
     let attempt = 0
     let timer: ReturnType<typeof setTimeout>
     const retry = () => {
       attempt += 1
       router.refresh()
-      if (attempt < 3) timer = setTimeout(retry, 1500 * (attempt + 1))
+      if (attempt < 40) timer = setTimeout(retry, Math.min(8000, 1500 * (attempt + 1)))
     }
     timer = setTimeout(retry, 1500)
 

@@ -209,7 +209,7 @@ export default async function TournamentsPage() {
         {list.length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2">
             {list.map((t) => (
-              <Link key={t.id} href={`/tournaments/${t.id}`}>
+              <Link key={t.id} href={`/tournaments/${t.id}`} className="block min-w-0">
                 <GlassPanel className="group flex items-center gap-4 p-5 transition-transform hover:-translate-y-0.5">
                   <span className="skeuo grid h-12 w-12 place-items-center rounded-xl text-warning">
                     <Trophy weight="bold" size={24} />

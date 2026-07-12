@@ -77,6 +77,7 @@ export interface Config {
     tournaments: Tournament;
     matches: Match;
     awards: Award;
+    trophies: Trophy;
     activity: Activity;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -95,6 +96,7 @@ export interface Config {
     tournaments: TournamentsSelect<false> | TournamentsSelect<true>;
     matches: MatchesSelect<false> | MatchesSelect<true>;
     awards: AwardsSelect<false> | AwardsSelect<true>;
+    trophies: TrophiesSelect<false> | TrophiesSelect<true>;
     activity: ActivitySelect<false> | ActivitySelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -463,6 +465,28 @@ export interface Award {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "trophies".
+ */
+export interface Trophy {
+  id: number;
+  name: string;
+  kind: 'recurring' | 'final';
+  description?: string | null;
+  winners?:
+    | {
+        franchise: number | Franchise;
+        /**
+         * Season / edition label, e.g. "S1" or "2026"
+         */
+        season?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "activity".
  */
 export interface Activity {
@@ -536,6 +560,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'awards';
         value: number | Award;
+      } | null)
+    | ({
+        relationTo: 'trophies';
+        value: number | Trophy;
       } | null)
     | ({
         relationTo: 'activity';
@@ -766,6 +794,24 @@ export interface AwardsSelect<T extends boolean = true> {
   franchise?: T;
   player?: T;
   note?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "trophies_select".
+ */
+export interface TrophiesSelect<T extends boolean = true> {
+  name?: T;
+  kind?: T;
+  description?: T;
+  winners?:
+    | T
+    | {
+        franchise?: T;
+        season?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }

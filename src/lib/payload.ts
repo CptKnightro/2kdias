@@ -42,7 +42,7 @@ export function isTransientDbError(err: unknown): boolean {
  * single failure shouldn't dump the user to a skeleton — a short backoff almost
  * always lands. Only transient connection errors retry; real errors throw at once.
  */
-export async function withDbRetry<T>(fn: () => Promise<T>, tries = 4): Promise<T> {
+export async function withDbRetry<T>(fn: () => Promise<T>, tries = 5): Promise<T> {
   let lastErr: unknown
   for (let attempt = 1; attempt <= tries; attempt++) {
     try {
@@ -50,10 +50,12 @@ export async function withDbRetry<T>(fn: () => Promise<T>, tries = 4): Promise<T
     } catch (err) {
       lastErr = err
       if (attempt === tries || !isTransientDbError(err)) throw err
-      // Escalating backoff (150ms → 300ms → 600ms). A stale connection on a
-      // thawed serverless instance usually succeeds on the 2nd attempt (fresh
-      // socket); a briefly-saturated pooler needs a moment longer.
-      await new Promise((r) => setTimeout(r, Math.min(600, 150 * 2 ** (attempt - 1))))
+      // Escalating backoff (200ms → 400 → 800 → 1500, ~2.9s total). A stale
+      // connection on a thawed instance usually succeeds on the 2nd attempt
+      // (fresh socket); the cold-start connection herd right after a deploy can
+      // keep the pooler saturated a couple seconds, so absorb that here rather
+      // than bouncing the user to a skeleton.
+      await new Promise((r) => setTimeout(r, Math.min(1500, 200 * 2 ** (attempt - 1))))
     }
   }
   throw lastErr

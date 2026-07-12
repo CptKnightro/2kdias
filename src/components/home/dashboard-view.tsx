@@ -61,6 +61,12 @@ export function DashboardView({
 
   const winShare = buildWinShare(stats)
   const ranked = [...played].sort(standingsSort)
+  // Win-rate board + standings list every franchise (0-game teams like Lakers
+  // included), un-played teams last. The bars/donut/timeline below stay
+  // played-only — a team with no games has nothing to plot.
+  const standings = [...stats].sort(
+    (a, b) => (b.games > 0 ? 1 : 0) - (a.games > 0 ? 1 : 0) || standingsSort(a, b),
+  )
   const byWins = ranked.map((s) => ({
     id: s.id,
     label: ownerLabel(s),
@@ -121,7 +127,7 @@ export function DashboardView({
               </ChartCard>
               <ChartCard title="Win rate" icon={Ranking} fill>
                 <ul className="space-y-2.5">
-                  {ranked.map((s, i) => {
+                  {standings.map((s, i) => {
                     const pct = s.games ? Math.round((s.wins / s.games) * 100) : 0
                     return (
                       <li key={s.id} className="flex items-center gap-2.5 text-sm">
@@ -157,7 +163,7 @@ export function DashboardView({
             </div>
 
             {/* Head-to-head + form */}
-            <div className="grid items-start gap-3 md:grid-cols-2">
+            <div className="grid gap-3 md:grid-cols-2">
               <HeadToHead teams={headToHead.teams} matrix={headToHead.matrix} />
               <FormGuide rows={form} />
             </div>

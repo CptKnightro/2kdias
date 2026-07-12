@@ -3,8 +3,9 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Basketball, Trophy, FlagBanner } from '@phosphor-icons/react'
+import { Basketball, Trophy, FlagBanner, CheckCircle } from '@phosphor-icons/react'
 import { GlassPanel } from '@/components/ui-bits'
+import { TeamLogo } from '@/components/team-logo'
 import {
   Field,
   Select,
@@ -57,16 +58,6 @@ export function LogMatchView({
     })
   }
 
-  // Each team's dropdown hides the other team so you can't pick the same one twice.
-  const homeOptions = React.useMemo(
-    () => franchiseOptions.filter((o) => o.value !== awayFranchise),
-    [franchiseOptions, awayFranchise],
-  )
-  const awayOptions = React.useMemo(
-    () => franchiseOptions.filter((o) => o.value !== homeFranchise),
-    [franchiseOptions, homeFranchise],
-  )
-
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="text-center">
@@ -103,7 +94,8 @@ export function LogMatchView({
               label="Team 1"
               teamValue={homeFranchise}
               onTeamChange={setHomeFranchise}
-              teamOptions={homeOptions}
+              allOptions={franchiseOptions}
+              disabledValue={awayFranchise}
               scoreValue={homeScore}
               onScoreChange={setHomeScore}
             />
@@ -114,7 +106,8 @@ export function LogMatchView({
               label="Team 2"
               teamValue={awayFranchise}
               onTeamChange={setAwayFranchise}
-              teamOptions={awayOptions}
+              allOptions={franchiseOptions}
+              disabledValue={homeFranchise}
               scoreValue={awayScore}
               onScoreChange={setAwayScore}
             />
@@ -140,27 +133,48 @@ function TeamColumn({
   label,
   teamValue,
   onTeamChange,
-  teamOptions,
+  allOptions,
+  disabledValue,
   scoreValue,
   onScoreChange,
 }: {
   label: string
   teamValue: string
   onTeamChange: (v: string) => void
-  teamOptions: Option[]
+  allOptions: Option[]
+  /** The team picked in the *other* column — hidden on desktop, dimmed on the strip. */
+  disabledValue: string
   scoreValue: string
   onScoreChange: (v: string) => void
 }) {
+  // Desktop dropdown drops the opponent so the same team can't be picked twice.
+  const dropdownOptions = allOptions.filter((o) => o.value !== disabledValue)
   return (
-    <div className="space-y-3">
-      <Field label={label}>
-        <Select
+    <div className="min-w-0 space-y-3">
+      <div className="block min-w-0 space-y-1.5">
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </span>
+        {/* Desktop: classic dropdown */}
+        <div className="hidden lg:block">
+          <Select
+            aria-label={label}
+            value={teamValue}
+            onChange={(e) => onTeamChange(e.target.value)}
+            options={dropdownOptions}
+            placeholder="— select team —"
+          />
+        </div>
+        {/* Mobile + tablet: swipeable team strip (cooler than a native select) */}
+        <TeamStrip
+          className="lg:hidden"
+          ariaLabel={label}
+          options={allOptions}
           value={teamValue}
-          onChange={(e) => onTeamChange(e.target.value)}
-          options={teamOptions}
-          placeholder="— select team —"
+          disabledValue={disabledValue}
+          onChange={onTeamChange}
         />
-      </Field>
+      </div>
       <Field label="Score">
         <div className="relative">
           <Basketball
@@ -176,6 +190,76 @@ function TeamColumn({
           />
         </div>
       </Field>
+    </div>
+  )
+}
+
+/**
+ * Horizontal snap-scrolling team picker — one tappable crest per franchise, like
+ * a calendar day-strip. Shown on mobile/tablet in place of the dropdown; the
+ * opponent's pick stays visible but dimmed so the row never reflows.
+ */
+function TeamStrip({
+  options,
+  value,
+  disabledValue,
+  onChange,
+  ariaLabel,
+  className,
+}: {
+  options: Option[]
+  value: string
+  disabledValue: string
+  onChange: (v: string) => void
+  ariaLabel: string
+  className?: string
+}) {
+  return (
+    <div
+      role="radiogroup"
+      aria-label={ariaLabel}
+      className={cn(
+        'flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1',
+        '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+        className,
+      )}
+    >
+      {options.map((o) => {
+        const selected = value === o.value
+        const disabled = disabledValue === o.value
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            aria-label={o.label}
+            disabled={disabled}
+            onClick={() => onChange(o.value)}
+            className={cn(
+              'relative flex min-w-[4.75rem] shrink-0 snap-center flex-col items-center gap-1.5 rounded-2xl px-3 py-2.5 transition-all',
+              disabled
+                ? 'pointer-events-none opacity-30'
+                : selected
+                  ? 'skeuo-btn ring-2 ring-inset ring-primary'
+                  : 'skeuo text-foreground/70 hover:-translate-y-0.5 hover:text-foreground',
+            )}
+          >
+            {selected && (
+              <CheckCircle weight="fill" className="absolute right-1 top-1 size-4 text-white" />
+            )}
+            <TeamLogo name={o.label} color="#DF2604" size={34} />
+            <span
+              className={cn(
+                'max-w-[4.5rem] truncate text-xs font-bold uppercase tracking-tight',
+                selected && 'text-white',
+              )}
+            >
+              {o.label}
+            </span>
+          </button>
+        )
+      })}
     </div>
   )
 }

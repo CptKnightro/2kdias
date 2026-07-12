@@ -44,7 +44,8 @@ export function TournamentDashboard({
 
   return (
     <div className="space-y-5">
-      <div className="grid items-start gap-4 md:grid-cols-2">
+      {/* stretch, not items-start — a short card next to a tall one reads as misaligned */}
+      <div className="grid gap-4 md:grid-cols-2">
         <TitlesCard titles={titles} />
         <WalkOfShame rows={shame} subtitle="League + tournament combined" />
       </div>
@@ -70,7 +71,7 @@ export function TournamentDashboard({
 /** Titles won leaderboard (champions of completed tournaments). */
 function TitlesCard({ titles }: { titles: TitleRow[] }) {
   return (
-    <GlassPanel className="p-5">
+    <GlassPanel className="flex h-full flex-col p-5">
       <div className="mb-3 flex items-center gap-2">
         <Crown weight="fill" size={18} className="text-warning" />
         <h3 className="font-display text-lg font-black uppercase tracking-tight">Titles</h3>
@@ -79,7 +80,9 @@ function TitlesCard({ titles }: { titles: TitleRow[] }) {
         </span>
       </div>
       {titles.length === 0 ? (
-        <p className="py-4 text-center text-sm text-muted-foreground">No champions crowned yet.</p>
+        <p className="grid flex-1 place-items-center py-4 text-center text-sm text-muted-foreground">
+          No champions crowned yet.
+        </p>
       ) : (
         <ul className="space-y-1.5">
           {titles.map((t) => (

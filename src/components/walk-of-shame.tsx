@@ -13,7 +13,7 @@ export function WalkOfShame({ rows, subtitle }: { rows: ShameRow[]; subtitle?: s
   const worst = rows[0].defeats
 
   return (
-    <GlassPanel className="p-5">
+    <GlassPanel className="h-full p-5">
       <div className="mb-1 flex items-center gap-2">
         <Skull weight="fill" size={18} className="text-primary" />
         <h3 className="font-display text-lg font-black uppercase tracking-tight">Walk of Shame</h3>

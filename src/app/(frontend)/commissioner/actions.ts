@@ -5,7 +5,7 @@ import { getPayloadClient } from '@/lib/payload'
 import { requireCommissioner } from '@/lib/auth'
 import { computeExpiresAt, durationToDays, isTradeExpired, type DurationUnit } from '@/lib/trades'
 import { activateLoan, revertLoan } from '@/lib/trades-server'
-import type { Player, Tournament, Match, Trade, Award, User } from '@/payload-types'
+import type { Player, Tournament, Match, Trade, Award, Trophy, User } from '@/payload-types'
 
 export type Result = { ok: boolean; error?: string; id?: number }
 
@@ -132,7 +132,7 @@ export async function deletePlayer(id: number): Promise<Result> {
 }
 
 // — Tournaments —————————————————————————————————————————————————————————————
-const COMP_PATHS = ['/tournaments', '/tournaments/[id]', '/standings', '/records', '/matches']
+const COMP_PATHS = ['/tournaments', '/tournaments/[id]', '/standings', '/matches']
 
 export async function saveTournament(input: {
   id?: number
@@ -284,7 +284,7 @@ export async function deleteTrade(id: number): Promise<Result> {
 }
 
 // — Awards ——————————————————————————————————————————————————————————————————
-const AWARD_PATHS = ['/records']
+const AWARD_PATHS = ['/']
 
 export async function createAward(input: {
   title: string
@@ -314,6 +314,77 @@ export async function deleteAward(id: number): Promise<Result> {
     const payload = await getPayloadClient()
     await payload.delete({ collection: 'awards', id })
   }, AWARD_PATHS)
+}
+
+// — Trophies ————————————————————————————————————————————————————————————————
+const TROPHY_PATHS = ['/trophies']
+
+export async function saveTrophy(input: {
+  id?: number
+  name: string
+  kind: string
+  description?: string
+}): Promise<Result> {
+  const data = {
+    name: input.name,
+    kind: (s(input.kind) === 'final' ? 'final' : 'recurring') as Trophy['kind'],
+    description: s(input.description) ?? null,
+  }
+  return run(async () => {
+    const payload = await getPayloadClient()
+    if (input.id) {
+      await payload.update({ collection: 'trophies', id: input.id, data })
+      return input.id
+    }
+    const doc = await payload.create({ collection: 'trophies', data })
+    return doc.id as number
+  }, TROPHY_PATHS)
+}
+
+export async function deleteTrophy(id: number): Promise<Result> {
+  return run(async () => {
+    const payload = await getPayloadClient()
+    await payload.delete({ collection: 'trophies', id })
+  }, TROPHY_PATHS)
+}
+
+/** Existing winner rows, with the franchise collapsed back to its id (depth-0 shape). */
+const winnerRows = (t: Trophy) =>
+  (t.winners ?? []).map((w) => ({
+    id: w.id,
+    franchise: typeof w.franchise === 'object' ? w.franchise.id : w.franchise,
+    season: w.season ?? null,
+  }))
+
+export async function addTrophyWinner(input: {
+  trophyId: number
+  franchise: string
+  season?: string
+}): Promise<Result> {
+  const franchise = n(input.franchise)
+  if (!franchise) return { ok: false, error: 'Pick a team' }
+  return run(async () => {
+    const payload = await getPayloadClient()
+    const trophy = await payload.findByID({ collection: 'trophies', id: input.trophyId, depth: 0 })
+    const entry = { franchise, season: s(input.season) ?? null }
+    // A "final" trophy has one holder — awarding it replaces the winner.
+    const winners = trophy.kind === 'final' ? [entry] : [...winnerRows(trophy), entry]
+    await payload.update({ collection: 'trophies', id: input.trophyId, data: { winners } })
+    return input.trophyId
+  }, TROPHY_PATHS)
+}
+
+export async function removeTrophyWinner(input: {
+  trophyId: number
+  winnerId: string
+}): Promise<Result> {
+  return run(async () => {
+    const payload = await getPayloadClient()
+    const trophy = await payload.findByID({ collection: 'trophies', id: input.trophyId, depth: 0 })
+    const winners = winnerRows(trophy).filter((w) => w.id !== input.winnerId)
+    await payload.update({ collection: 'trophies', id: input.trophyId, data: { winners } })
+    return input.trophyId
+  }, TROPHY_PATHS)
 }
 
 // — Users (settings) ————————————————————————————————————————————————————————

@@ -20,7 +20,7 @@ function Gate({
   actions: React.ReactNode
 }) {
   return (
-    <div className="grid min-h-[calc(100vh-12rem)] place-items-center">
+    <div className="grid min-h-[calc(100dvh-12rem)] place-items-center">
       <div className="glass-strong w-[min(92vw,26rem)] space-y-4 rounded-3xl p-8 text-center">
         <span className="skeuo mx-auto grid h-14 w-14 place-items-center rounded-2xl text-primary">
           {icon}

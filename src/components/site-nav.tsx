@@ -27,7 +27,7 @@ const NAV = [
   { href: '/players', label: 'Players', icon: IdentificationCard },
   { href: '/trades', label: 'Trades', icon: ArrowsLeftRight },
   { href: '/standings', label: 'Standings', icon: ListNumbers },
-  { href: '/records', label: 'Records', icon: Medal },
+  { href: '/trophies', label: 'Trophies', icon: Medal },
 ]
 
 export function SiteNav() {
@@ -40,8 +40,8 @@ export function SiteNav() {
   const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href))
 
   return (
-    <header className="sticky top-0 z-50 px-3 pt-3">
-      <nav className="glass mx-auto flex max-w-7xl items-center gap-2 rounded-2xl px-3 py-2">
+    <header className="sticky top-0 z-50 px-3 pt-3 sm:px-4 lg:px-6">
+      <nav className="glass mx-auto flex max-w-[1800px] items-center gap-2 rounded-2xl px-3 py-2">
         {/* Brand */}
         <Link href="/" className="flex shrink-0 items-center gap-2 pr-2">
           <Image
@@ -97,7 +97,7 @@ export function SiteNav() {
 
       {/* Mobile drawer */}
       {open && (
-        <div className="glass-strong mx-auto mt-2 max-w-7xl rounded-2xl p-2 xl:hidden">
+        <div className="glass-strong mx-auto mt-2 max-w-[1800px] rounded-2xl p-2 xl:hidden">
           <ul className="grid grid-cols-2 gap-1">
             {NAV.map(({ href, label, icon: Icon }) => (
               <li key={href}>

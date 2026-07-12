@@ -11,6 +11,7 @@ import {
   GearSix,
   Gavel,
   Basketball,
+  Medal,
 } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
@@ -22,6 +23,7 @@ const TABS = [
   { href: '/commissioner/tournaments', label: 'Tournaments', icon: Trophy },
   { href: '/commissioner/matches', label: 'Matches', icon: Basketball },
   { href: '/commissioner/trades', label: 'Trades', icon: ArrowsLeftRight },
+  { href: '/commissioner/trophies', label: 'Trophies', icon: Medal },
   { href: '/commissioner/settings', label: 'Settings', icon: GearSix },
 ]
 

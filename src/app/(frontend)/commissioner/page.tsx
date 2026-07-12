@@ -6,6 +6,7 @@ import {
   ArrowsLeftRight,
   Gavel,
   ListNumbers,
+  Medal,
 } from '@phosphor-icons/react/dist/ssr'
 import { getPayloadClient } from '@/lib/payload'
 import { DbErrorToast } from '@/components/db-error-toast'
@@ -59,6 +60,7 @@ export default async function CommissionerDashboard() {
     { label: 'Tournaments & Scores', desc: 'Run competitions, enter match results', icon: Trophy, href: '/commissioner/tournaments' },
     { label: 'Fix Match Results', desc: 'Edit scores or delete logged matches', icon: ListNumbers, href: '/commissioner/matches' },
     { label: 'Record a Trade', desc: 'Move players between franchises', icon: ArrowsLeftRight, href: '/commissioner/trades' },
+    { label: 'Trophies & Rings', desc: 'Create trophies, crown winners, hand out rings', icon: Medal, href: '/commissioner/trophies' },
   ]
 
   return (
