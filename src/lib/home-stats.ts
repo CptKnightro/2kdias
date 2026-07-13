@@ -147,9 +147,16 @@ export const standingsSort = (a: TeamStat, b: TeamStat): number =>
   b.draws - a.draws ||
   b.pointsFor - b.pointsAgainst - (a.pointsFor - a.pointsAgainst)
 
-/** "12-4" or "12-4-1" once a draw exists — the record string shown next to an owner. */
-export const recordLabel = (s: Pick<TeamStat, 'wins' | 'losses' | 'draws'>): string =>
-  s.draws > 0 ? `${s.wins}-${s.losses}-${s.draws}` : `${s.wins}-${s.losses}`
+/**
+ * "12-4" or "12-4-1" — the record string shown next to an owner. Draws are
+ * appended when the owner has one, or for every owner when the view expects
+ * them (`force`, used by the 2K Championship view where games can end level).
+ */
+export const recordLabel = (
+  s: Pick<TeamStat, 'wins' | 'losses' | 'draws'>,
+  force = false,
+): string =>
+  force || s.draws > 0 ? `${s.wins}-${s.losses}-${s.draws}` : `${s.wins}-${s.losses}`
 
 // ── Win share (donut) ───────────────────────────────────────────────────────
 

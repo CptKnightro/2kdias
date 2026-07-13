@@ -115,7 +115,7 @@ function PointsTable({ rows }: { rows: StandingRow[] }) {
   return (
     <GlassPanel className="overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[22rem] text-sm">
+        <table className="w-full text-sm sm:min-w-[22rem]">
           <thead>
             <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
               <th className="px-4 py-3">#</th>
@@ -123,8 +123,9 @@ function PointsTable({ rows }: { rows: StandingRow[] }) {
               <th className="px-2 py-3 text-center">W</th>
               <th className="px-2 py-3 text-center">L</th>
               {hasDraws && <th className="px-2 py-3 text-center">D</th>}
-              <th className="px-2 py-3 text-center">PF</th>
-              <th className="px-2 py-3 text-center">PA</th>
+              {/* PF/PA hide on phones so W/L/D + Diff fit without crowding the names */}
+              <th className="hidden px-2 py-3 text-center sm:table-cell">PF</th>
+              <th className="hidden px-2 py-3 text-center sm:table-cell">PA</th>
               <th className="px-4 py-3 text-center">Diff</th>
             </tr>
           </thead>
@@ -140,17 +141,18 @@ function PointsTable({ rows }: { rows: StandingRow[] }) {
                   )}
                 >
                   <td className="px-4 py-3 font-display font-bold text-muted-foreground">{i + 1}</td>
-                  <td className="px-2 py-3">
-                    <span className="flex items-center gap-2 font-semibold">
+                  {/* w-full + max-w-0: the team column absorbs all leftover width, and long names truncate instead of shoving the W column */}
+                  <td className="w-full max-w-0 px-2 py-3">
+                    <span className="flex min-w-0 items-center gap-2 font-semibold">
                       <TeamLogo name={r.team} color={r.color} size={20} />
-                      {r.team}
+                      <span className="truncate">{r.team}</span>
                     </span>
                   </td>
                   <td className="px-2 py-3 text-center font-bold text-success">{r.w}</td>
                   <td className="px-2 py-3 text-center text-muted-foreground">{r.l}</td>
                   {hasDraws && <td className="px-2 py-3 text-center text-muted-foreground">{r.d}</td>}
-                  <td className="px-2 py-3 text-center">{r.pf}</td>
-                  <td className="px-2 py-3 text-center">{r.pa}</td>
+                  <td className="hidden px-2 py-3 text-center sm:table-cell">{r.pf}</td>
+                  <td className="hidden px-2 py-3 text-center sm:table-cell">{r.pa}</td>
                   <td
                     className={cn(
                       'px-4 py-3 text-center font-display font-bold',

@@ -51,6 +51,7 @@ const emptyDashboard = (): DashboardData => ({
   timeline: { series: [], data: [] },
   shame: [],
   shameSubtitle: '',
+  showDraws: false,
   trophyCase: [],
 })
 
@@ -143,6 +144,8 @@ export default async function HomePage() {
         timeline: buildTimeline(rows, ms),
         shame: buildWalkOfShame(rows, games),
         shameSubtitle,
+        // Only 2K games can end level — its view shows W-L-D for everyone.
+        showDraws: ring === '2k',
         trophyCase: trophyCaseFor(ring),
       })
 

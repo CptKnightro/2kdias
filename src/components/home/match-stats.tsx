@@ -39,7 +39,16 @@ function MiniStat({
 }
 
 /** The four headline league numbers. Team-specific tiles carry the owner name subtly below. */
-export function StatTiles({ stats, records }: { stats: TeamStat[]; records: Records }) {
+export function StatTiles({
+  stats,
+  records,
+  showDraws = false,
+}: {
+  stats: TeamStat[]
+  records: Records
+  /** Force W-L-D records (2K Championship view — its games can end level). */
+  showDraws?: boolean
+}) {
   const played = stats.filter((s) => s.games > 0)
   const totalMatches = played.reduce((a, s) => a + s.games, 0) / 2
   const totalPoints = played.reduce((a, s) => a + s.pointsFor, 0)
@@ -52,7 +61,7 @@ export function StatTiles({ stats, records }: { stats: TeamStat[]; records: Reco
       <MiniStat label="Total Points" value={totalPoints} icon={ChartBar} />
       <MiniStat
         label="Top Seed"
-        value={topSeed ? recordLabel(topSeed) : '—'}
+        value={topSeed ? recordLabel(topSeed, showDraws) : '—'}
         sub={topSeed ? ownerLabel(topSeed) : null}
         icon={Crown}
       />
@@ -67,16 +76,23 @@ export function StatTiles({ stats, records }: { stats: TeamStat[]; records: Reco
 }
 
 /** Full league table, ordered by wins then point differential. Owner name leads each row. */
-export function StandingsTable({ stats }: { stats: TeamStat[] }) {
+export function StandingsTable({
+  stats,
+  showDraws = false,
+}: {
+  stats: TeamStat[]
+  /** Force the D column (2K Championship view — its games can end level). */
+  showDraws?: boolean
+}) {
   // Every franchise gets a row — a team that hasn't played yet (e.g. Lakers)
   // still shows its 0-0 status, sorted below anyone who's logged a game.
   const table = [...stats].sort(
     (a, b) => (b.games > 0 ? 1 : 0) - (a.games > 0 ? 1 : 0) || standingsSort(a, b),
   )
   if (table.length === 0) return null
-  // The D column only appears once a draw exists — G.O.A.T games can't draw,
-  // so its table keeps the classic W/L layout.
-  const hasDraws = table.some((s) => s.draws > 0)
+  // The D column shows for draw-capable views (2K) or once a draw exists —
+  // G.O.A.T games can't draw, so its table keeps the classic W/L layout.
+  const hasDraws = showDraws || table.some((s) => s.draws > 0)
 
   return (
     <GlassPanel className="overflow-hidden p-0">

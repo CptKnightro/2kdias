@@ -42,6 +42,8 @@ export type DashboardData = {
   shame: ShameRow[]
   /** Scope note under the Walk of Shame — the two rings cover different games. */
   shameSubtitle: string
+  /** 2K games can end level — its view shows W-L-D for everyone; G.O.A.T stays W-L. */
+  showDraws: boolean
   trophyCase: TrophyCaseRow[]
 }
 
@@ -59,6 +61,7 @@ export function DashboardView({
   timeline,
   shame,
   shameSubtitle,
+  showDraws,
   trophyCase,
 }: DashboardData) {
   const played = stats.filter((s) => s.games > 0)
@@ -99,7 +102,7 @@ export function DashboardView({
               League Stats
             </h2>
 
-            <StatTiles stats={stats} records={records} />
+            <StatTiles stats={stats} records={records} showDraws={showDraws} />
 
             {/* Win share donut + win-rate leaderboard */}
             <div className="grid gap-3 md:grid-cols-2">
@@ -127,7 +130,7 @@ export function DashboardView({
                         />
                         <span className="flex-1 truncate font-semibold">{ownerLabel(s)}</span>
                         <span className="shrink-0 tabular-nums text-muted-foreground">
-                          {recordLabel(s)}
+                          {recordLabel(s, showDraws)}
                         </span>
                         <span className="w-11 shrink-0 text-right font-bold tabular-nums">
                           {pct}%
@@ -162,7 +165,7 @@ export function DashboardView({
               </ChartCard>
             )}
 
-            <StandingsTable stats={stats} />
+            <StandingsTable stats={stats} showDraws={showDraws} />
 
             {/* Walk of Shame — walkover losses within this ring's scope */}
             <WalkOfShame rows={shame} subtitle={shameSubtitle} />
