@@ -24,6 +24,7 @@ import type { ShameRow } from '@/lib/tournament-stats'
 import {
   buildWinShare,
   ownerLabel,
+  recordLabel,
   standingsSort,
   type FormRow,
   type HeadToHead as H2H,
@@ -126,7 +127,7 @@ export function DashboardView({
                         />
                         <span className="flex-1 truncate font-semibold">{ownerLabel(s)}</span>
                         <span className="shrink-0 tabular-nums text-muted-foreground">
-                          {s.wins}-{s.losses}
+                          {recordLabel(s)}
                         </span>
                         <span className="w-11 shrink-0 text-right font-bold tabular-nums">
                           {pct}%

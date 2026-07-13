@@ -43,6 +43,7 @@ export function RecentMatches({ matches }: { matches: RecentMatch[] }) {
 function MatchRow({ match: m }: { match: RecentMatch }) {
   const homeWon = (m.homeScore ?? 0) > (m.awayScore ?? 0)
   const awayWon = (m.awayScore ?? 0) > (m.homeScore ?? 0)
+  const drawn = m.homeScore != null && m.awayScore != null && m.homeScore === m.awayScore
 
   return (
     <div className="flex items-center gap-3 px-4 py-3">
@@ -61,6 +62,11 @@ function MatchRow({ match: m }: { match: RecentMatch }) {
         >
           {m.ring === '2k' ? '2K' : 'G.O.A.T'}
         </span>
+        {drawn && (
+          <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-foreground/70">
+            Draw
+          </span>
+        )}
         {m.walkover && (
           <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-warning">
             Walkover

@@ -20,6 +20,7 @@ export type TeamStat = {
   games: number
   wins: number
   losses: number
+  draws: number
   pointsFor: number
   pointsAgainst: number
 }
@@ -111,6 +112,7 @@ export function buildStats(franchises: FranchiseRow[], matches: RawMatch[]): Tea
       games: 0,
       wins: 0,
       losses: 0,
+      draws: 0,
       pointsFor: 0,
       pointsAgainst: 0,
     })
@@ -131,14 +133,23 @@ export function buildStats(franchises: FranchiseRow[], matches: RawMatch[]): Tea
     } else if (m.awayScore > m.homeScore) {
       away.wins++
       home.losses++
+    } else {
+      home.draws++
+      away.draws++
     }
   }
   return [...map.values()]
 }
 
-/** Standings order: wins, then point differential. */
+/** Standings order: wins, then draws (a draw beats a loss), then point differential. */
 export const standingsSort = (a: TeamStat, b: TeamStat): number =>
-  b.wins - a.wins || b.pointsFor - b.pointsAgainst - (a.pointsFor - a.pointsAgainst)
+  b.wins - a.wins ||
+  b.draws - a.draws ||
+  b.pointsFor - b.pointsAgainst - (a.pointsFor - a.pointsAgainst)
+
+/** "12-4" or "12-4-1" once a draw exists — the record string shown next to an owner. */
+export const recordLabel = (s: Pick<TeamStat, 'wins' | 'losses' | 'draws'>): string =>
+  s.draws > 0 ? `${s.wins}-${s.losses}-${s.draws}` : `${s.wins}-${s.losses}`
 
 // ── Win share (donut) ───────────────────────────────────────────────────────
 
@@ -159,7 +170,7 @@ export type H2HTeam = { id: number; owner: string; color: string }
 export type HeadToHead = {
   teams: H2HTeam[]
   /** matrix[rowId][colId] = the row team's record vs the col team. */
-  matrix: Record<number, Record<number, { w: number; l: number }>>
+  matrix: Record<number, Record<number, { w: number; l: number; d: number }>>
 }
 
 export function buildHeadToHead(franchises: FranchiseRow[], matches: RawMatch[]): HeadToHead {
@@ -172,18 +183,21 @@ export function buildHeadToHead(franchises: FranchiseRow[], matches: RawMatch[])
   const matrix: HeadToHead['matrix'] = {}
   for (const t of teams) matrix[t.id] = {}
 
-  const bump = (a: number, b: number, win: boolean) => {
+  const bump = (a: number, b: number, result: 'w' | 'l' | 'd') => {
     if (!matrix[a] || !matrix[b]) return
-    matrix[a][b] ??= { w: 0, l: 0 }
-    if (win) matrix[a][b].w++
-    else matrix[a][b].l++
+    matrix[a][b] ??= { w: 0, l: 0, d: 0 }
+    matrix[a][b][result]++
   }
 
   for (const m of resolve(matches)) {
-    if (m.homeScore === m.awayScore) continue // ties contribute no head-to-head edge
+    if (m.homeScore === m.awayScore) {
+      bump(m.homeId, m.awayId, 'd')
+      bump(m.awayId, m.homeId, 'd')
+      continue
+    }
     const homeWon = m.homeScore > m.awayScore
-    bump(m.homeId, m.awayId, homeWon)
-    bump(m.awayId, m.homeId, !homeWon)
+    bump(m.homeId, m.awayId, homeWon ? 'w' : 'l')
+    bump(m.awayId, m.homeId, homeWon ? 'l' : 'w')
   }
   // Keep only teams that have played at least one tracked game.
   const active = teams.filter((t) => Object.keys(matrix[t.id]).length > 0)
@@ -192,7 +206,7 @@ export function buildHeadToHead(franchises: FranchiseRow[], matches: RawMatch[])
 
 // ── Form guide (last 5) ─────────────────────────────────────────────────────
 
-export type FormResult = { result: 'W' | 'L'; walkover: boolean }
+export type FormResult = { result: 'W' | 'L' | 'D'; walkover: boolean }
 export type FormRow = {
   id: number
   owner: string
@@ -205,7 +219,11 @@ export function buildForm(franchises: FranchiseRow[], matches: RawMatch[]): Form
   for (const f of franchises) seq.set(f.id, [])
 
   for (const m of resolve(matches)) {
-    if (m.homeScore === m.awayScore) continue
+    if (m.homeScore === m.awayScore) {
+      seq.get(m.homeId)?.push({ result: 'D', walkover: m.walkover })
+      seq.get(m.awayId)?.push({ result: 'D', walkover: m.walkover })
+      continue
+    }
     const homeWon = m.homeScore > m.awayScore
     seq.get(m.homeId)?.push({ result: homeWon ? 'W' : 'L', walkover: m.walkover })
     seq.get(m.awayId)?.push({ result: homeWon ? 'L' : 'W', walkover: m.walkover })
@@ -310,7 +328,12 @@ export function buildRecords(franchises: FranchiseRow[], matches: RawMatch[]): R
   const streak = new Map<number, number>()
   let best: Records['longestStreak'] = null
   for (const m of resolve(matches)) {
-    if (m.homeScore === m.awayScore) continue
+    if (m.homeScore === m.awayScore) {
+      // A draw isn't a win — it snaps both sides' streaks.
+      streak.set(m.homeId, 0)
+      streak.set(m.awayId, 0)
+      continue
+    }
     const winId = m.homeScore > m.awayScore ? m.homeId : m.awayId
     const loseId = winId === m.homeId ? m.awayId : m.homeId
     streak.set(winId, (streak.get(winId) ?? 0) + 1)

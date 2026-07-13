@@ -23,7 +23,9 @@ export function FormGuide({ rows }: { rows: FormRow[] }) {
                   className={`grid size-6 place-items-center rounded-md text-[11px] font-black ${
                     r.result === 'W'
                       ? 'bg-success/20 text-success'
-                      : 'bg-destructive/20 text-destructive'
+                      : r.result === 'L'
+                        ? 'bg-destructive/20 text-destructive'
+                        : 'bg-foreground/15 text-foreground/70'
                   } ${r.walkover ? 'ring-1 ring-inset ring-foreground/40' : ''}`}
                 >
                   {r.result}

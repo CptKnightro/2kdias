@@ -2,7 +2,14 @@ import { Basketball, ChartBar, Crown, Fire } from '@phosphor-icons/react/dist/ss
 import { TeamLogo } from '@/components/team-logo'
 import type { Icon } from '@phosphor-icons/react'
 import { GlassPanel } from '@/components/ui-bits'
-import { ownerLabel, standingsSort, PRIMARY, type Records, type TeamStat } from '@/lib/home-stats'
+import {
+  ownerLabel,
+  recordLabel,
+  standingsSort,
+  PRIMARY,
+  type Records,
+  type TeamStat,
+} from '@/lib/home-stats'
 
 function MiniStat({
   label,
@@ -45,7 +52,7 @@ export function StatTiles({ stats, records }: { stats: TeamStat[]; records: Reco
       <MiniStat label="Total Points" value={totalPoints} icon={ChartBar} />
       <MiniStat
         label="Top Seed"
-        value={topSeed ? `${topSeed.wins}-${topSeed.losses}` : '—'}
+        value={topSeed ? recordLabel(topSeed) : '—'}
         sub={topSeed ? ownerLabel(topSeed) : null}
         icon={Crown}
       />
@@ -67,6 +74,9 @@ export function StandingsTable({ stats }: { stats: TeamStat[] }) {
     (a, b) => (b.games > 0 ? 1 : 0) - (a.games > 0 ? 1 : 0) || standingsSort(a, b),
   )
   if (table.length === 0) return null
+  // The D column only appears once a draw exists — G.O.A.T games can't draw,
+  // so its table keeps the classic W/L layout.
+  const hasDraws = table.some((s) => s.draws > 0)
 
   return (
     <GlassPanel className="overflow-hidden p-0">
@@ -79,6 +89,7 @@ export function StandingsTable({ stats }: { stats: TeamStat[] }) {
               <th className="px-2 py-2.5 text-center font-semibold">GP</th>
               <th className="px-2 py-2.5 text-center font-semibold">W</th>
               <th className="px-2 py-2.5 text-center font-semibold">L</th>
+              {hasDraws && <th className="px-2 py-2.5 text-center font-semibold">D</th>}
               <th className="hidden px-2 py-2.5 text-center font-semibold sm:table-cell">PF</th>
               <th className="hidden px-2 py-2.5 text-center font-semibold sm:table-cell">PA</th>
               <th className="px-4 py-2.5 text-center font-semibold">Diff</th>
@@ -105,6 +116,11 @@ export function StandingsTable({ stats }: { stats: TeamStat[] }) {
                   <td className="px-2 py-2.5 text-center tabular-nums text-muted-foreground">{s.games}</td>
                   <td className="px-2 py-2.5 text-center font-bold tabular-nums">{s.wins}</td>
                   <td className="px-2 py-2.5 text-center tabular-nums text-muted-foreground">{s.losses}</td>
+                  {hasDraws && (
+                    <td className="px-2 py-2.5 text-center tabular-nums text-muted-foreground">
+                      {s.draws}
+                    </td>
+                  )}
                   <td className="hidden px-2 py-2.5 text-center tabular-nums sm:table-cell">{s.pointsFor}</td>
                   <td className="hidden px-2 py-2.5 text-center tabular-nums text-muted-foreground sm:table-cell">{s.pointsAgainst}</td>
                   <td

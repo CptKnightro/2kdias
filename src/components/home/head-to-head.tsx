@@ -59,7 +59,8 @@ export function HeadToHead({ teams, matrix }: H2HData) {
                     key={col.id}
                     className={`grid h-11 place-items-center rounded-lg text-sm font-bold tabular-nums ${tone}`}
                   >
-                    {rec ? `${rec.w}-${rec.l}` : '—'}
+                    {/* Draw count only tacks on when one exists (2K games can end level) */}
+                    {rec ? `${rec.w}-${rec.l}${rec.d > 0 ? `-${rec.d}` : ''}` : '—'}
                   </div>
                 )
               })}

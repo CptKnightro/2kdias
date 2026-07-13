@@ -88,12 +88,15 @@ export function buildTournamentStats(franchises: FranchiseRow[], games: SideGame
       games: 0,
       wins: 0,
       losses: 0,
+      draws: 0,
       pointsFor: 0,
       pointsAgainst: 0,
     })
   }
   for (const g of games) {
     const w = winnerOf(g)
+    // Both scores present but no winner = a genuine draw (not a missing result).
+    const drawn = w === null && g.scoreA != null && g.scoreB != null
     const sa = g.scoreA ?? 0
     const sb = g.scoreB ?? 0
     for (const id of g.a) {
@@ -104,6 +107,7 @@ export function buildTournamentStats(franchises: FranchiseRow[], games: SideGame
       t.pointsAgainst += sb
       if (w === 'a') t.wins++
       else if (w === 'b') t.losses++
+      else if (drawn) t.draws++
     }
     for (const id of g.b) {
       const t = map.get(id)
@@ -113,6 +117,7 @@ export function buildTournamentStats(franchises: FranchiseRow[], games: SideGame
       t.pointsAgainst += sa
       if (w === 'b') t.wins++
       else if (w === 'a') t.losses++
+      else if (drawn) t.draws++
     }
   }
   return [...map.values()].filter((t) => t.games > 0)

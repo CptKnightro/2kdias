@@ -22,6 +22,7 @@ export default async function StandingsPage() {
           color: f.color ?? '#DF2604',
           w: 0,
           l: 0,
+          d: 0,
           pf: 0,
           pa: 0,
         }
@@ -33,22 +34,31 @@ export default async function StandingsPage() {
         depth: 0,
       })
       for (const m of matches.docs) {
+        // Score-less finals carry no result — don't let them register as 0-0 draws.
+        if (m.homeScore == null || m.awayScore == null) continue
         const home = String(typeof m.homeFranchise === 'object' ? m.homeFranchise?.id : m.homeFranchise)
         const away = String(typeof m.awayFranchise === 'object' ? m.awayFranchise?.id : m.awayFranchise)
-        const hs = m.homeScore ?? 0
-        const as = m.awayScore ?? 0
+        const hs = m.homeScore
+        const as = m.awayScore
         if (table[home]) {
           table[home].pf += hs
           table[home].pa += as
-          hs >= as ? table[home].w++ : table[home].l++
+          if (hs > as) table[home].w++
+          else if (as > hs) table[home].l++
+          else table[home].d++
         }
         if (table[away]) {
           table[away].pf += as
           table[away].pa += hs
-          as > hs ? table[away].w++ : table[away].l++
+          if (as > hs) table[away].w++
+          else if (hs > as) table[away].l++
+          else table[away].d++
         }
       }
-      return Object.values(table).sort((a, b) => b.w - a.w || b.pf - b.pa - (a.pf - a.pa))
+      // Wins, then draws (a draw beats a loss), then point differential.
+      return Object.values(table).sort(
+        (a, b) => b.w - a.w || b.d - a.d || b.pf - b.pa - (a.pf - a.pa),
+      )
     },
     [] as StandingRow[],
   )

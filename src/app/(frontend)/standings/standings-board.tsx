@@ -13,6 +13,7 @@ export type StandingRow = {
   color: string
   w: number
   l: number
+  d: number
   pf: number
   pa: number
 }
@@ -108,6 +109,9 @@ function SeedView({ rows }: { rows: StandingRow[] }) {
 }
 
 function PointsTable({ rows }: { rows: StandingRow[] }) {
+  // D column only appears once someone has drawn — 2K games can end level,
+  // G.O.A.T games can't, so a draw-free table keeps its classic layout.
+  const hasDraws = rows.some((r) => r.d > 0)
   return (
     <GlassPanel className="overflow-hidden">
       <div className="overflow-x-auto">
@@ -118,6 +122,7 @@ function PointsTable({ rows }: { rows: StandingRow[] }) {
               <th className="px-2 py-3">Team</th>
               <th className="px-2 py-3 text-center">W</th>
               <th className="px-2 py-3 text-center">L</th>
+              {hasDraws && <th className="px-2 py-3 text-center">D</th>}
               <th className="px-2 py-3 text-center">PF</th>
               <th className="px-2 py-3 text-center">PA</th>
               <th className="px-4 py-3 text-center">Diff</th>
@@ -143,6 +148,7 @@ function PointsTable({ rows }: { rows: StandingRow[] }) {
                   </td>
                   <td className="px-2 py-3 text-center font-bold text-success">{r.w}</td>
                   <td className="px-2 py-3 text-center text-muted-foreground">{r.l}</td>
+                  {hasDraws && <td className="px-2 py-3 text-center text-muted-foreground">{r.d}</td>}
                   <td className="px-2 py-3 text-center">{r.pf}</td>
                   <td className="px-2 py-3 text-center">{r.pa}</td>
                   <td
