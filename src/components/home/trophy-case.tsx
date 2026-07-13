@@ -27,7 +27,7 @@ export function TrophyCase({ rows }: { rows: TrophyCaseRow[] }) {
       <ul className="space-y-2.5 py-1">
         {rows.map((r) => (
           <li key={r.label} className="flex items-center gap-3">
-            <span className="flex w-[70px] shrink-0 items-center justify-end gap-1.5">
+            <span className="flex w-24 shrink-0 items-center gap-1.5">
               <span
                 className="h-2 w-2 shrink-0 rounded-full"
                 style={{ backgroundColor: r.color ?? 'var(--color-muted-foreground)' }}
@@ -46,7 +46,9 @@ export function TrophyCase({ rows }: { rows: TrophyCaseRow[] }) {
                 </span>
               )}
             </span>
-            <span className="font-display text-xl font-black leading-none">{r.rings}</span>
+            <span className="w-7 shrink-0 text-right font-display text-xl font-black leading-none">
+              {r.rings}
+            </span>
           </li>
         ))}
       </ul>
