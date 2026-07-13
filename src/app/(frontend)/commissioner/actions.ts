@@ -5,6 +5,7 @@ import { getPayloadClient } from '@/lib/payload'
 import { requireCommissioner } from '@/lib/auth'
 import { computeExpiresAt, durationToDays, isTradeExpired, type DurationUnit } from '@/lib/trades'
 import { activateLoan, revertLoan } from '@/lib/trades-server'
+import { ringOf } from '@/lib/rings'
 import type { Player, Tournament, Match, Trade, Award, Trophy, User } from '@/payload-types'
 
 export type Result = { ok: boolean; error?: string; id?: number }
@@ -324,10 +325,13 @@ export async function saveTrophy(input: {
   name: string
   kind: string
   description?: string
+  /** Which competition the trophy belongs to — splits the home trophy case. */
+  ring?: string
 }): Promise<Result> {
   const data = {
     name: input.name,
     kind: (s(input.kind) === 'final' ? 'final' : 'recurring') as Trophy['kind'],
+    ring: ringOf(input.ring),
     description: s(input.description) ?? null,
   }
   return run(async () => {

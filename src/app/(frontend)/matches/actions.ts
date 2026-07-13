@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { getPayloadClient } from '@/lib/payload'
 import { getCurrentUser, requireCommissioner } from '@/lib/auth'
+import { ringOf } from '@/lib/rings'
 import type { Match } from '@/payload-types'
 
 export type Result = { ok: boolean; error?: string; id?: number }
@@ -38,11 +39,14 @@ export async function logMatch(input: {
   homeScore: string | number
   awayScore: string | number
   walkover?: boolean
+  /** Which competition the result counts toward — anything but '2k' lands in the G.O.A.T Ring. */
+  ring?: string
 }): Promise<Result> {
   try {
     const homeFranchise = Number(input.homeFranchise)
     const awayFranchise = Number(input.awayFranchise)
     const walkover = !!input.walkover
+    const ring = ringOf(input.ring)
     const homeScore = int(input.homeScore)
     const awayScore = int(input.awayScore)
 
@@ -64,6 +68,7 @@ export async function logMatch(input: {
         homeScore,
         awayScore,
         walkover,
+        ring,
         status: 'final' as Match['status'],
         playedAt: new Date().toISOString(),
       },
@@ -92,6 +97,8 @@ export async function updateMatch(input: {
   homeScore: string | number
   awayScore: string | number
   walkover?: boolean
+  /** Optional ring fix-up — for a match logged under the wrong competition. */
+  ring?: string
 }): Promise<Result> {
   try {
     await requireCommissioner()
@@ -104,7 +111,12 @@ export async function updateMatch(input: {
     await payload.update({
       collection: 'matches',
       id: input.id,
-      data: { homeScore, awayScore, walkover: !!input.walkover },
+      data: {
+        homeScore,
+        awayScore,
+        walkover: !!input.walkover,
+        ...(input.ring != null ? { ring: ringOf(input.ring) } : {}),
+      },
     })
     purge()
     return { ok: true, id: input.id }

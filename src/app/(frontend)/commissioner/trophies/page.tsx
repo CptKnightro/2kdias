@@ -17,6 +17,7 @@ export default async function CommishTrophiesPage() {
       id: t.id as number,
       name: t.name,
       kind: t.kind === 'final' ? 'final' : 'recurring',
+      ring: t.ring === '2k' ? '2k' : 'goat',
       icon: t.icon ?? null,
       description: t.description ?? null,
       winners: (t.winners ?? []).map((w, i) => {

@@ -16,22 +16,41 @@ import {
 } from '@/components/commissioner/fields'
 import { logMatch } from '@/app/(frontend)/matches/actions'
 import { RecentMatches, type RecentMatch } from '@/components/home/recent-matches'
+import { RingTabs } from '@/components/home/ring-toggle'
+import { RING_LABELS, type Ring } from '@/lib/rings'
 import { cn } from '@/lib/utils'
 
 export function LogMatchView({
   franchiseOptions,
+  goatFranchiseOptions,
   recent,
 }: {
+  /** Every franchise — the 2K Championship Ring field. */
   franchiseOptions: Option[]
+  /** G.O.A.T Ring field — Lash's Lakers sit this one out. */
+  goatFranchiseOptions: Option[]
   recent: RecentMatch[]
 }) {
   const router = useRouter()
+  const [ring, setRing] = React.useState<Ring>('goat')
   const [homeFranchise, setHomeFranchise] = React.useState('')
   const [awayFranchise, setAwayFranchise] = React.useState('')
   const [homeScore, setHomeScore] = React.useState('')
   const [awayScore, setAwayScore] = React.useState('')
   const [walkover, setWalkover] = React.useState(false)
   const [pending, start] = React.useTransition()
+
+  const options = ring === 'goat' ? goatFranchiseOptions : franchiseOptions
+
+  // Switching to G.O.A.T can strand a pick that only plays 2K (Lakers) — clear it.
+  const switchRing = (r: Ring) => {
+    setRing(r)
+    if (r === 'goat') {
+      const allowed = new Set(goatFranchiseOptions.map((o) => o.value))
+      if (homeFranchise && !allowed.has(homeFranchise)) setHomeFranchise('')
+      if (awayFranchise && !allowed.has(awayFranchise)) setAwayFranchise('')
+    }
+  }
 
   const reset = () => {
     setHomeFranchise('')
@@ -47,9 +66,16 @@ export function LogMatchView({
     if (homeFranchise === awayFranchise) return toast.error('Teams must be different')
     if (homeScore === '' || awayScore === '') return toast.error('Enter both scores')
     start(async () => {
-      const res = await logMatch({ homeFranchise, awayFranchise, homeScore, awayScore, walkover })
+      const res = await logMatch({
+        homeFranchise,
+        awayFranchise,
+        homeScore,
+        awayScore,
+        walkover,
+        ring,
+      })
       if (res.ok) {
-        toast.success('Match logged')
+        toast.success(`Match logged — ${RING_LABELS[ring]}`)
         reset()
         router.refresh() // refresh dashboard charts with the new result
       } else {
@@ -72,6 +98,9 @@ export function LogMatchView({
 
       <GlassPanel strong className="p-6 sm:p-8">
         <form onSubmit={submit} className="space-y-6">
+          {/* Which ring this result counts toward — G.O.A.T hides the Lakers */}
+          <RingTabs value={ring} onChange={switchRing} />
+
           {/* Walkover toggle — sits at the top of the form */}
           <div className="flex items-center justify-between gap-3 rounded-xl skeuo-inset px-4 py-3">
             <div className="flex items-center gap-2.5">
@@ -94,7 +123,7 @@ export function LogMatchView({
               label="Team 1"
               teamValue={homeFranchise}
               onTeamChange={setHomeFranchise}
-              allOptions={franchiseOptions}
+              allOptions={options}
               disabledValue={awayFranchise}
               scoreValue={homeScore}
               onScoreChange={setHomeScore}
@@ -106,7 +135,7 @@ export function LogMatchView({
               label="Team 2"
               teamValue={awayFranchise}
               onTeamChange={setAwayFranchise}
-              allOptions={franchiseOptions}
+              allOptions={options}
               disabledValue={homeFranchise}
               scoreValue={awayScore}
               onScoreChange={setAwayScore}

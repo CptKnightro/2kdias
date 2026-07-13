@@ -28,6 +28,7 @@ export type ManagedTrophy = {
   id: number
   name: string
   kind: 'recurring' | 'final'
+  ring: 'goat' | '2k'
   icon: string | null
   description: string | null
   winners: {
@@ -52,6 +53,11 @@ const fmtDate = (iso: string | null) =>
 const KIND_OPTIONS: Option[] = [
   { label: 'Recurring — every winner keeps their ring', value: 'recurring' },
   { label: 'Final — one winner holds it', value: 'final' },
+]
+
+const RING_OPTIONS: Option[] = [
+  { label: 'G.O.A.T Ring', value: 'goat' },
+  { label: '2K Championship Ring', value: '2k' },
 ]
 
 export function TrophyManager({
@@ -104,6 +110,7 @@ export function TrophyManager({
 function TrophyForm({ onDone }: { onDone: () => void }) {
   const [name, setName] = React.useState('')
   const [kind, setKind] = React.useState('recurring')
+  const [ring, setRing] = React.useState('goat')
   const [description, setDescription] = React.useState('')
   const [pending, setPending] = React.useState(false)
 
@@ -113,13 +120,14 @@ function TrophyForm({ onDone }: { onDone: () => void }) {
       return
     }
     setPending(true)
-    const res = await saveTrophy({ name: name.trim(), kind, description })
+    const res = await saveTrophy({ name: name.trim(), kind, ring, description })
     setPending(false)
     if (res.ok) {
       toast.success(`“${name.trim()}” created`)
       setName('')
       setDescription('')
       setKind('recurring')
+      setRing('goat')
       onDone()
     } else {
       toast.error(res.error ?? 'Could not create trophy')
@@ -146,6 +154,12 @@ function TrophyForm({ onDone }: { onDone: () => void }) {
           }
         >
           <Select value={kind} onChange={(e) => setKind(e.target.value)} options={KIND_OPTIONS} />
+        </Field>
+        <Field
+          label="Competition"
+          hint="Drives which home-page trophy case the rings count in."
+        >
+          <Select value={ring} onChange={(e) => setRing(e.target.value)} options={RING_OPTIONS} />
         </Field>
       </div>
       <Field label="Description (optional)">
@@ -264,6 +278,8 @@ function TrophyCard({
           </h3>
           <p className="text-xs text-muted-foreground">
             {isFinal ? 'Final — one winner' : 'Recurring — multiple winners'}
+            {' · '}
+            {trophy.ring === '2k' ? '2K Championship Ring' : 'G.O.A.T Ring'}
           </p>
         </div>
         <MiniButton variant="danger" onClick={remove} aria-label={`Delete ${trophy.name}`}>

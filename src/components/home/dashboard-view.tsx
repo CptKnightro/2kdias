@@ -33,13 +33,14 @@ import {
 } from '@/lib/home-stats'
 
 export type DashboardData = {
-  season: string
   stats: TeamStat[]
   headToHead: H2H
   form: FormRow[]
   records: Records
   timeline: Timeline
   shame: ShameRow[]
+  /** Scope note under the Walk of Shame — the two rings cover different games. */
+  shameSubtitle: string
   trophyCase: TrophyCaseRow[]
 }
 
@@ -50,13 +51,13 @@ const QUICK_LINKS = [
 ]
 
 export function DashboardView({
-  season,
   stats,
   headToHead,
   form,
   records,
   timeline,
   shame,
+  shameSubtitle,
   trophyCase,
 }: DashboardData) {
   const played = stats.filter((s) => s.games > 0)
@@ -79,16 +80,6 @@ export function DashboardView({
 
   return (
     <div className="space-y-6">
-      {/* Season — centered hero */}
-      <div className="flex justify-center pt-1">
-        <div className="glass-strong relative inline-flex flex-col items-center overflow-hidden rounded-3xl px-12 py-8 text-center sm:px-16 sm:py-9">
-          <div className="pointer-events-none absolute -top-12 left-1/2 h-40 w-40 -translate-x-1/2 rounded-full bg-primary/25 blur-3xl" />
-          <p className="relative font-display text-5xl font-black uppercase leading-none tracking-tight sm:text-6xl">
-            {season}
-          </p>
-        </div>
-      </div>
-
       {!hasMatches ? (
         <section>
           <h2 className="mb-4 font-display text-2xl font-black uppercase tracking-tight">
@@ -152,7 +143,7 @@ export function DashboardView({
               <ChartCard title="Wins by owner" icon={Trophy}>
                 <TeamBars data={byWins} unit="W" />
               </ChartCard>
-              <ChartCard title="Trophy case" icon={Medal} hint="rings & silverware">
+              <ChartCard title="Trophy case" icon={Medal} hint="rings">
                 <TrophyCase rows={trophyCase} />
               </ChartCard>
             </div>
@@ -172,8 +163,8 @@ export function DashboardView({
 
             <StandingsTable stats={stats} />
 
-            {/* Walk of Shame — walkover losses, league + tournament combined */}
-            <WalkOfShame rows={shame} subtitle="League + tournament combined" />
+            {/* Walk of Shame — walkover losses within this ring's scope */}
+            <WalkOfShame rows={shame} subtitle={shameSubtitle} />
           </section>
 
           <RecordCards records={records} />

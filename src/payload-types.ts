@@ -416,6 +416,10 @@ export interface Match {
   id: number;
   tournament?: (number | null) | Tournament;
   /**
+   * Which league competition this match counts toward.
+   */
+  ring?: ('goat' | '2k') | null;
+  /**
    * e.g. "Quarterfinal"
    */
   round?: string | null;
@@ -475,6 +479,10 @@ export interface Trophy {
    * Shown on the Trophies page (defaults by type)
    */
   icon?: ('trophy' | 'ring' | 'crown') | null;
+  /**
+   * Which competition this trophy belongs to.
+   */
+  ring?: ('goat' | '2k') | null;
   description?: string | null;
   winners?:
     | {
@@ -780,6 +788,7 @@ export interface TournamentsSelect<T extends boolean = true> {
  */
 export interface MatchesSelect<T extends boolean = true> {
   tournament?: T;
+  ring?: T;
   round?: T;
   status?: T;
   homeFranchise?: T;
@@ -815,6 +824,7 @@ export interface TrophiesSelect<T extends boolean = true> {
   name?: T;
   kind?: T;
   icon?: T;
+  ring?: T;
   description?: T;
   winners?:
     | T

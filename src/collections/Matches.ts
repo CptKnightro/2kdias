@@ -22,6 +22,18 @@ export const Matches: CollectionConfig = {
       admin: { position: 'sidebar' },
     },
     {
+      // League matches (no tournament) belong to one of two rings. Old rows
+      // predate this field — code must treat a missing ring as 'goat'.
+      name: 'ring',
+      type: 'select',
+      defaultValue: 'goat',
+      options: [
+        { label: 'G.O.A.T Ring', value: 'goat' },
+        { label: '2K Championship Ring', value: '2k' },
+      ],
+      admin: { position: 'sidebar', description: 'Which league competition this match counts toward.' },
+    },
+    {
       type: 'row',
       fields: [
         { name: 'round', type: 'text', admin: { width: '50%', description: 'e.g. "Quarterfinal"' } },

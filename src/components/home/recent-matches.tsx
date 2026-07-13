@@ -1,5 +1,6 @@
 import { GlassPanel } from '@/components/ui-bits'
 import { TeamLogo } from '@/components/team-logo'
+import type { Ring } from '@/lib/rings'
 
 export type RecentMatch = {
   id: number
@@ -10,6 +11,7 @@ export type RecentMatch = {
   homeScore: number | null
   awayScore: number | null
   walkover: boolean
+  ring: Ring
   date: string
 }
 
@@ -52,6 +54,13 @@ function MatchRow({ match: m }: { match: RecentMatch }) {
       </div>
       <Side name={m.away} color={m.awayColor} win={awayWon} align="left" />
       <div className="ml-auto flex shrink-0 items-center gap-3">
+        <span
+          className={`hidden rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider sm:inline ${
+            m.ring === '2k' ? 'bg-primary/15 text-primary' : 'bg-foreground/10 text-foreground/60'
+          }`}
+        >
+          {m.ring === '2k' ? '2K' : 'G.O.A.T'}
+        </span>
         {m.walkover && (
           <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-warning">
             Walkover

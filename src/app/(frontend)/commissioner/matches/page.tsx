@@ -1,6 +1,7 @@
 import { getPayloadClient } from '@/lib/payload'
 import { DbErrorToast } from '@/components/db-error-toast'
 import { PageSkeleton } from '@/components/skeletons'
+import { ringOf } from '@/lib/rings'
 import { MatchManager, type ManagedMatch } from './match-manager'
 
 const relName = (v: unknown): string | null =>
@@ -25,6 +26,7 @@ export default async function CommishMatchesPage() {
       homeScore: m.homeScore ?? null,
       awayScore: m.awayScore ?? null,
       walkover: !!m.walkover,
+      ring: ringOf(m.ring),
       status: m.status ?? 'scheduled',
       date: fmtDate(m.playedAt),
     }))

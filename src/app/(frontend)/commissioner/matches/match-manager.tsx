@@ -8,6 +8,7 @@ import { GlassPanel, EmptyState } from '@/components/ui-bits'
 import { TeamLogo } from '@/components/team-logo'
 import { NumberInput, MiniButton } from '@/components/commissioner/fields'
 import { updateMatch, deleteMatch } from '@/app/(frontend)/matches/actions'
+import type { Ring } from '@/lib/rings'
 import { cn } from '@/lib/utils'
 
 export type ManagedMatch = {
@@ -19,6 +20,7 @@ export type ManagedMatch = {
   homeScore: number | null
   awayScore: number | null
   walkover: boolean
+  ring: Ring
   status: string
   date: string
 }
@@ -59,6 +61,7 @@ function MatchRow({ match: m }: { match: ManagedMatch }) {
   const [homeScore, setHomeScore] = React.useState(String(m.homeScore ?? ''))
   const [awayScore, setAwayScore] = React.useState(String(m.awayScore ?? ''))
   const [walkover, setWalkover] = React.useState(m.walkover)
+  const [ring, setRing] = React.useState<Ring>(m.ring)
   const [pending, start] = React.useTransition()
 
   const homeWon = (m.homeScore ?? 0) > (m.awayScore ?? 0)
@@ -69,12 +72,13 @@ function MatchRow({ match: m }: { match: ManagedMatch }) {
     setHomeScore(String(m.homeScore ?? ''))
     setAwayScore(String(m.awayScore ?? ''))
     setWalkover(m.walkover)
+    setRing(m.ring)
   }
 
   const save = () => {
     if (homeScore === '' || awayScore === '') return toast.error('Enter both scores')
     start(async () => {
-      const res = await updateMatch({ id: m.id, homeScore, awayScore, walkover })
+      const res = await updateMatch({ id: m.id, homeScore, awayScore, walkover, ring })
       if (res.ok) {
         toast.success('Match updated')
         setEditing(false)
@@ -145,6 +149,17 @@ function MatchRow({ match: m }: { match: ManagedMatch }) {
           <>
             <button
               type="button"
+              onClick={() => setRing((r) => (r === '2k' ? 'goat' : '2k'))}
+              title="Toggle which competition this match counts toward"
+              className={cn(
+                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors',
+                ring === '2k' ? 'bg-primary/20 text-primary' : 'bg-foreground/10 text-foreground/70',
+              )}
+            >
+              {ring === '2k' ? '2K' : 'G.O.A.T'}
+            </button>
+            <button
+              type="button"
               onClick={() => setWalkover((w) => !w)}
               className={cn(
                 'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors',
@@ -177,6 +192,14 @@ function MatchRow({ match: m }: { match: ManagedMatch }) {
           </>
         ) : (
           <>
+            <span
+              className={cn(
+                'hidden rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider sm:inline',
+                m.ring === '2k' ? 'bg-primary/15 text-primary' : 'bg-foreground/10 text-foreground/60',
+              )}
+            >
+              {m.ring === '2k' ? '2K' : 'G.O.A.T'}
+            </span>
             {m.walkover && (
               <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-warning">
                 Walkover

@@ -54,6 +54,18 @@ export const Trophies: CollectionConfig = {
         },
       ],
     },
+    {
+      // Splits the home-page trophy case: the G.O.A.T view counts goat-ring
+      // trophies, the 2K Championship view counts 2k ones. Missing = 'goat'.
+      name: 'ring',
+      type: 'select',
+      defaultValue: 'goat',
+      options: [
+        { label: 'G.O.A.T Ring', value: 'goat' },
+        { label: '2K Championship Ring', value: '2k' },
+      ],
+      admin: { description: 'Which competition this trophy belongs to.' },
+    },
     { name: 'description', type: 'textarea' },
     {
       name: 'winners',
