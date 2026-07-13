@@ -30,7 +30,7 @@ export const Trophies: CollectionConfig = {
     {
       type: 'row',
       fields: [
-        { name: 'name', type: 'text', required: true, admin: { width: '60%' } },
+        { name: 'name', type: 'text', required: true, admin: { width: '40%' } },
         {
           name: 'kind',
           type: 'select',
@@ -40,7 +40,17 @@ export const Trophies: CollectionConfig = {
             { label: 'Recurring — every ring holder shows', value: 'recurring' },
             { label: 'Final — one winner only', value: 'final' },
           ],
-          admin: { width: '40%' },
+          admin: { width: '35%' },
+        },
+        {
+          name: 'icon',
+          type: 'select',
+          options: [
+            { label: 'Trophy cup', value: 'trophy' },
+            { label: 'Ring', value: 'ring' },
+            { label: 'Crown', value: 'crown' },
+          ],
+          admin: { width: '25%', description: 'Shown on the Trophies page (defaults by type)' },
         },
       ],
     },
@@ -54,18 +64,44 @@ export const Trophies: CollectionConfig = {
           type: 'row',
           fields: [
             {
+              name: 'winnerType',
+              type: 'select',
+              defaultValue: 'team',
+              options: [
+                { label: 'Team', value: 'team' },
+                { label: 'Individual owner', value: 'owner' },
+              ],
+              admin: { width: '30%' },
+            },
+            {
               name: 'franchise',
               type: 'relationship',
               relationTo: 'franchises',
-              required: true,
-              admin: { width: '60%' },
+              admin: {
+                width: '35%',
+                condition: (_, siblingData) => siblingData?.winnerType !== 'owner',
+              },
+            },
+            {
+              name: 'ownerName',
+              type: 'text',
+              admin: {
+                width: '35%',
+                condition: (_, siblingData) => siblingData?.winnerType === 'owner',
+              },
             },
             {
               name: 'season',
               type: 'text',
-              admin: { width: '40%', description: 'Season / edition label, e.g. "S1" or "2026"' },
+              admin: { width: '30%', description: 'Season / edition label, e.g. "S1" or "2026"' },
             },
           ],
+        },
+        {
+          name: 'awardedAt',
+          type: 'date',
+          defaultValue: () => new Date().toISOString(),
+          admin: { description: 'When the ring was earned — shown in the trophy history log' },
         },
       ],
     },

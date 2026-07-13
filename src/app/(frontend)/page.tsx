@@ -26,6 +26,7 @@ import {
   type ShameRow,
 } from '@/lib/tournament-stats'
 import type { RecentMatch } from '@/components/home/recent-matches'
+import type { TrophyCaseRow } from '@/components/home/trophy-case'
 import type { Option } from '@/components/commissioner/fields'
 
 export const dynamic = 'force-dynamic' // never cache a transient DB blip (would be served for the whole revalidate window)
@@ -42,7 +43,7 @@ const count = (v: unknown): number => (Array.isArray(v) ? v.length : 0)
 export default async function HomePage() {
   const { data, dbReady } = await safeQuery(
     async (payload) => {
-      const [activity, auctions, trades, settings, franchiseList, matches, tournaments] =
+      const [activity, auctions, trades, settings, franchiseList, matches, tournaments, trophies] =
         await Promise.all([
           payload.find({ collection: 'activity', sort: '-createdAt', limit: 20, depth: 1 }),
           payload.find({ collection: 'auctions', sort: '-updatedAt', limit: 10, depth: 0 }),
@@ -65,6 +66,7 @@ export default async function HomePage() {
           }),
           // Tournaments — only their bracket games feed the combined Walk of Shame.
           payload.find({ collection: 'tournaments', limit: 200, depth: 0 }),
+          payload.find({ collection: 'trophies', limit: 100, depth: 1 }),
         ])
 
       const franchiseRows: FranchiseRow[] = franchiseList.docs.map((f) => ({
@@ -74,6 +76,27 @@ export default async function HomePage() {
         color: f.color ?? null,
       }))
       const matchDocs = matches.docs
+
+      // Trophy case = every ring across all trophies, tallied per owner.
+      // Team rings credit the franchise's owner; owner-type rings use the name directly.
+      const ringsByOwner = new Map<string, TrophyCaseRow>()
+      for (const t of trophies.docs) {
+        for (const w of t.winners ?? []) {
+          const isOwner = w.winnerType === 'owner'
+          const franchise = typeof w.franchise === 'object' ? w.franchise : null
+          const label = (isOwner ? w.ownerName : (franchise?.ownerName ?? franchise?.name)) ?? '—'
+          const row = ringsByOwner.get(label) ?? {
+            label,
+            color: isOwner ? null : (franchise?.color ?? null),
+            rings: 0,
+          }
+          row.rings += 1
+          ringsByOwner.set(label, row)
+        }
+      }
+      const trophyCase = [...ringsByOwner.values()].sort(
+        (a, b) => b.rings - a.rings || a.label.localeCompare(b.label),
+      )
 
       // Walk of Shame = walkover losses across league matches + tournament games.
       const shame = buildWalkOfShame(franchiseRows, [
@@ -115,6 +138,7 @@ export default async function HomePage() {
         records: buildRecords(franchiseRows, matchDocs),
         timeline: buildTimeline(franchiseRows, matchDocs),
         shame,
+        trophyCase,
         recent: matches.docs.slice(0, 10).map(
           (m): RecentMatch => ({
             id: m.id as number,
@@ -148,6 +172,7 @@ export default async function HomePage() {
       } as Records,
       timeline: { series: [], data: [] } as Timeline,
       shame: [] as ShameRow[],
+      trophyCase: [] as TrophyCaseRow[],
       recent: [] as RecentMatch[],
     },
   )
@@ -172,6 +197,7 @@ export default async function HomePage() {
           records={data.records}
           timeline={data.timeline}
           shame={data.shame}
+          trophyCase={data.trophyCase}
         />
       }
       status={<StatusView auctions={data.auctions} activity={data.activity} trades={data.trades} />}

@@ -348,25 +348,51 @@ export async function deleteTrophy(id: number): Promise<Result> {
   }, TROPHY_PATHS)
 }
 
+const TROPHY_ICONS = ['trophy', 'ring', 'crown'] as const
+
+export async function setTrophyIcon(input: { trophyId: number; icon: string }): Promise<Result> {
+  const icon = TROPHY_ICONS.find((i) => i === input.icon)
+  if (!icon) return { ok: false, error: 'Unknown icon' }
+  return run(async () => {
+    const payload = await getPayloadClient()
+    await payload.update({ collection: 'trophies', id: input.trophyId, data: { icon } })
+    return input.trophyId
+  }, TROPHY_PATHS)
+}
+
 /** Existing winner rows, with the franchise collapsed back to its id (depth-0 shape). */
 const winnerRows = (t: Trophy) =>
   (t.winners ?? []).map((w) => ({
     id: w.id,
-    franchise: typeof w.franchise === 'object' ? w.franchise.id : w.franchise,
+    winnerType: w.winnerType ?? 'team',
+    franchise: typeof w.franchise === 'object' && w.franchise ? w.franchise.id : (w.franchise ?? null),
+    ownerName: w.ownerName ?? null,
     season: w.season ?? null,
+    awardedAt: w.awardedAt ?? null,
   }))
 
 export async function addTrophyWinner(input: {
   trophyId: number
-  franchise: string
+  winnerType?: string
+  franchise?: string
+  ownerName?: string
   season?: string
 }): Promise<Result> {
-  const franchise = n(input.franchise)
-  if (!franchise) return { ok: false, error: 'Pick a team' }
+  const winnerType = s(input.winnerType) === 'owner' ? ('owner' as const) : ('team' as const)
+  const franchise = n(input.franchise) ?? null
+  const ownerName = s(input.ownerName) ?? null
+  if (winnerType === 'team' && !franchise) return { ok: false, error: 'Pick a team' }
+  if (winnerType === 'owner' && !ownerName) return { ok: false, error: 'Enter the owner name' }
   return run(async () => {
     const payload = await getPayloadClient()
     const trophy = await payload.findByID({ collection: 'trophies', id: input.trophyId, depth: 0 })
-    const entry = { franchise, season: s(input.season) ?? null }
+    const entry = {
+      winnerType,
+      franchise: winnerType === 'team' ? franchise : null,
+      ownerName: winnerType === 'owner' ? ownerName : null,
+      season: s(input.season) ?? null,
+      awardedAt: new Date().toISOString(),
+    }
     // A "final" trophy has one holder — awarding it replaces the winner.
     const winners = trophy.kind === 'final' ? [entry] : [...winnerRows(trophy), entry]
     await payload.update({ collection: 'trophies', id: input.trophyId, data: { winners } })

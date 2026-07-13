@@ -4,6 +4,8 @@ import * as migration_20260627_200000_franchises_owner_name from './20260627_200
 import * as migration_20260628_010000_trades_expiry from './20260628_010000_trades_expiry'
 import * as migration_20260628_020000_trades_loan_window from './20260628_020000_trades_loan_window'
 import * as migration_20260712_150000_trophies from './20260712_150000_trophies'
+import * as migration_20260713_100000_trophy_winner_logs from './20260713_100000_trophy_winner_logs'
+import * as migration_20260713_110000_trophy_winner_type from './20260713_110000_trophy_winner_type'
 
 export const migrations = [
   {
@@ -35,5 +37,15 @@ export const migrations = [
     up: migration_20260712_150000_trophies.up,
     down: migration_20260712_150000_trophies.down,
     name: '20260712_150000_trophies',
+  },
+  {
+    up: migration_20260713_100000_trophy_winner_logs.up,
+    down: migration_20260713_100000_trophy_winner_logs.down,
+    name: '20260713_100000_trophy_winner_logs',
+  },
+  {
+    up: migration_20260713_110000_trophy_winner_type.up,
+    down: migration_20260713_110000_trophy_winner_type.down,
+    name: '20260713_110000_trophy_winner_type',
   },
 ]

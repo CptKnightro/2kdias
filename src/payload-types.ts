@@ -471,14 +471,24 @@ export interface Trophy {
   id: number;
   name: string;
   kind: 'recurring' | 'final';
+  /**
+   * Shown on the Trophies page (defaults by type)
+   */
+  icon?: ('trophy' | 'ring' | 'crown') | null;
   description?: string | null;
   winners?:
     | {
-        franchise: number | Franchise;
+        winnerType?: ('team' | 'owner') | null;
+        franchise?: (number | null) | Franchise;
+        ownerName?: string | null;
         /**
          * Season / edition label, e.g. "S1" or "2026"
          */
         season?: string | null;
+        /**
+         * When the ring was earned — shown in the trophy history log
+         */
+        awardedAt?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -804,12 +814,16 @@ export interface AwardsSelect<T extends boolean = true> {
 export interface TrophiesSelect<T extends boolean = true> {
   name?: T;
   kind?: T;
+  icon?: T;
   description?: T;
   winners?:
     | T
     | {
+        winnerType?: T;
         franchise?: T;
+        ownerName?: T;
         season?: T;
+        awardedAt?: T;
         id?: T;
       };
   updatedAt?: T;

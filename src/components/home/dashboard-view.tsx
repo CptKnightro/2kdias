@@ -4,9 +4,9 @@ import {
   Trophy,
   Users as UsersIcon,
   CaretRight,
-  ChartBar,
   ChartLineUp,
   ChartPieSlice,
+  Medal,
   Ranking,
 } from '@phosphor-icons/react/dist/ssr'
 import { GlassPanel } from '@/components/ui-bits'
@@ -15,6 +15,7 @@ import { StatTiles, StandingsTable } from '@/components/home/match-stats'
 import { HeadToHead } from '@/components/home/head-to-head'
 import { FormGuide } from '@/components/home/form-guide'
 import { RecordCards } from '@/components/home/record-cards'
+import { TrophyCase, type TrophyCaseRow } from '@/components/home/trophy-case'
 import { TeamBars } from '@/components/home/charts/team-bars'
 import { WinShareDonut } from '@/components/home/charts/win-share-donut'
 import { ScoringTimeline } from '@/components/home/charts/scoring-timeline'
@@ -39,6 +40,7 @@ export type DashboardData = {
   records: Records
   timeline: Timeline
   shame: ShameRow[]
+  trophyCase: TrophyCaseRow[]
 }
 
 const QUICK_LINKS = [
@@ -55,6 +57,7 @@ export function DashboardView({
   records,
   timeline,
   shame,
+  trophyCase,
 }: DashboardData) {
   const played = stats.filter((s) => s.games > 0)
   const hasMatches = played.length > 0
@@ -73,14 +76,6 @@ export function DashboardView({
     value: s.wins,
     color: s.color,
   }))
-  const byPpg = [...played]
-    .map((s) => ({
-      id: s.id,
-      label: ownerLabel(s),
-      value: s.games ? Math.round(s.pointsFor / s.games) : 0,
-      color: s.color,
-    }))
-    .sort((a, b) => b.value - a.value)
 
   return (
     <div className="space-y-6">
@@ -157,8 +152,8 @@ export function DashboardView({
               <ChartCard title="Wins by owner" icon={Trophy}>
                 <TeamBars data={byWins} unit="W" />
               </ChartCard>
-              <ChartCard title="Points per game" icon={ChartBar}>
-                <TeamBars data={byPpg} unit="pts" />
+              <ChartCard title="Trophy case" icon={Medal} hint="rings & silverware">
+                <TrophyCase rows={trophyCase} />
               </ChartCard>
             </div>
 

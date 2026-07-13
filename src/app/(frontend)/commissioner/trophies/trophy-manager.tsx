@@ -3,8 +3,10 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Crown, Medal, Plus, Trash, Trophy as TrophyIcon } from '@phosphor-icons/react'
+import { Medal, Plus, Trash, Trophy as TrophyIcon, User } from '@phosphor-icons/react'
 import { EmptyState } from '@/components/ui-bits'
+import { TeamLogo } from '@/components/team-logo'
+import { trophyIcon, TROPHY_ICON_KEYS } from '@/components/trophy-icon'
 import {
   Field,
   TextInput,
@@ -14,15 +16,38 @@ import {
   MiniButton,
   type Option,
 } from '@/components/commissioner/fields'
-import { saveTrophy, deleteTrophy, addTrophyWinner, removeTrophyWinner } from '../actions'
+import {
+  saveTrophy,
+  deleteTrophy,
+  addTrophyWinner,
+  removeTrophyWinner,
+  setTrophyIcon,
+} from '../actions'
 
 export type ManagedTrophy = {
   id: number
   name: string
   kind: 'recurring' | 'final'
+  icon: string | null
   description: string | null
-  winners: { id: string; name: string; season: string | null }[]
+  winners: {
+    id: string
+    kind: 'team' | 'owner'
+    name: string
+    season: string | null
+    awardedAt: string | null
+  }[]
 }
+
+const WINNER_TYPE_OPTIONS: Option[] = [
+  { label: 'Team', value: 'team' },
+  { label: 'Individual owner', value: 'owner' },
+]
+
+const fmtDate = (iso: string | null) =>
+  iso
+    ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : null
 
 const KIND_OPTIONS: Option[] = [
   { label: 'Recurring — every winner keeps their ring', value: 'recurring' },
@@ -148,21 +173,51 @@ function TrophyCard({
   onDone: () => void
 }) {
   const isFinal = trophy.kind === 'final'
+  const [winnerType, setWinnerType] = React.useState('team')
   const [franchise, setFranchise] = React.useState('')
+  const [ownerName, setOwnerName] = React.useState('')
   const [season, setSeason] = React.useState('')
   const [pending, setPending] = React.useState(false)
 
+  // Cycle trophy/ring/crown/cup/plate on click — optimistic, reverts on failure.
+  const [icon, setIcon] = React.useState<string | null>(trophy.icon)
+  const Icon = trophyIcon(icon, trophy.kind)
+  const cycleIcon = async () => {
+    const current =
+      icon && TROPHY_ICON_KEYS.includes(icon) ? icon : trophy.kind === 'final' ? 'crown' : 'trophy'
+    const next = TROPHY_ICON_KEYS[(TROPHY_ICON_KEYS.indexOf(current) + 1) % TROPHY_ICON_KEYS.length]
+    setIcon(next)
+    const res = await setTrophyIcon({ trophyId: trophy.id, icon: next })
+    if (res.ok) {
+      onDone()
+    } else {
+      setIcon(icon)
+      toast.error(res.error ?? 'Could not change icon')
+    }
+  }
+
   const award = async () => {
-    if (!franchise) {
+    if (winnerType === 'team' && !franchise) {
       toast.error('Pick a team')
       return
     }
+    if (winnerType === 'owner' && !ownerName.trim()) {
+      toast.error('Enter the owner name')
+      return
+    }
     setPending(true)
-    const res = await addTrophyWinner({ trophyId: trophy.id, franchise, season })
+    const res = await addTrophyWinner({
+      trophyId: trophy.id,
+      winnerType,
+      franchise,
+      ownerName: ownerName.trim(),
+      season,
+    })
     setPending(false)
     if (res.ok) {
       toast.success(isFinal ? 'Winner crowned' : 'Ring handed out')
       setFranchise('')
+      setOwnerName('')
       setSeason('')
       onDone()
     } else {
@@ -194,9 +249,15 @@ function TrophyCard({
   return (
     <div className="glass space-y-3 rounded-2xl p-4">
       <div className="flex items-start gap-2.5">
-        <span className="skeuo grid h-9 w-9 shrink-0 place-items-center rounded-lg text-warning">
-          {isFinal ? <Crown weight="fill" size={18} /> : <TrophyIcon weight="fill" size={18} />}
-        </span>
+        <button
+          type="button"
+          onClick={cycleIcon}
+          title="Click to change the icon shown on the Trophies page"
+          aria-label={`Change trophy icon (current: ${icon ?? (isFinal ? 'crown' : 'trophy')})`}
+          className="skeuo grid h-9 w-9 shrink-0 place-items-center rounded-lg text-warning transition-transform hover:scale-105 active:scale-95"
+        >
+          <Icon weight="fill" size={18} />
+        </button>
         <div className="min-w-0 flex-1">
           <h3 className="truncate font-display text-lg font-black uppercase leading-tight tracking-tight">
             {trophy.name}
@@ -215,8 +276,15 @@ function TrophyCard({
           {trophy.winners.map((w) => (
             <li key={w.id} className="skeuo-inset flex items-center gap-2.5 rounded-xl px-3 py-2">
               <Medal weight="fill" size={16} className="shrink-0 text-warning" />
+              {w.kind === 'team' ? (
+                <TeamLogo name={w.name} size={20} />
+              ) : (
+                <User weight="fill" size={15} className="shrink-0 text-foreground/50" />
+              )}
               <span className="min-w-0 flex-1 truncate text-sm font-semibold">{w.name}</span>
-              {w.season && <span className="shrink-0 text-xs text-muted-foreground">{w.season}</span>}
+              <span className="shrink-0 text-right text-xs text-muted-foreground">
+                {[w.season, fmtDate(w.awardedAt)].filter(Boolean).join(' · ')}
+              </span>
               <MiniButton
                 variant="danger"
                 onClick={() => removeWinner(w.id)}
@@ -234,13 +302,28 @@ function TrophyCard({
       )}
 
       <div className="flex flex-wrap items-end gap-2">
-        <Field label={isFinal ? 'Winner' : 'Add winner'} className="min-w-40 flex-1">
+        <Field label="Winner type" className="w-36">
           <Select
-            value={franchise}
-            onChange={(e) => setFranchise(e.target.value)}
-            options={franchiseOptions}
-            placeholder="Pick a team…"
+            value={winnerType}
+            onChange={(e) => setWinnerType(e.target.value)}
+            options={WINNER_TYPE_OPTIONS}
           />
+        </Field>
+        <Field label={isFinal ? 'Winner' : 'Add winner'} className="min-w-40 flex-1">
+          {winnerType === 'team' ? (
+            <Select
+              value={franchise}
+              onChange={(e) => setFranchise(e.target.value)}
+              options={franchiseOptions}
+              placeholder="Pick a team…"
+            />
+          ) : (
+            <TextInput
+              value={ownerName}
+              onChange={(e) => setOwnerName(e.target.value)}
+              placeholder="Owner name, e.g. Mandy"
+            />
+          )}
         </Field>
         <Field label="Season" className="w-28">
           <TextInput

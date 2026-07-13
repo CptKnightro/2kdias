@@ -13,6 +13,12 @@ import { StandingsTable } from '@/components/home/match-stats'
 import { WinShareDonut } from '@/components/home/charts/win-share-donut'
 import { buildWinShare, ownerLabel, standingsSort, PRIMARY, type TeamStat } from '@/lib/home-stats'
 import type { Series, PairStat } from '@/lib/tournament-stats'
+import {
+  HeadToHeadBoard,
+  type H2HRow,
+  type H2HSeriesDetail,
+  type H2HGame,
+} from './head-to-head-board'
 import { cn } from '@/lib/utils'
 
 /**
@@ -51,6 +57,7 @@ export function SingleTournamentPanel({
   const leadDuo = pairings[0] ?? null
   const walkovers = series.reduce((n, s) => n + s.games.filter((g) => g.walkover).length, 0)
   const leader = [...stats].sort(standingsSort)[0] ?? null
+  const players = new Map(stats.map((s) => [s.id, { label: ownerLabel(s), color: s.color ?? PRIMARY }]))
 
   return (
     <div className="space-y-5">
@@ -80,6 +87,9 @@ export function SingleTournamentPanel({
           sub={walkovers ? 'shame marks handed out' : 'none yet'}
         />
       </div>
+
+      {/* Head-to-head — the three 2v2 matchups, scored by tournaments won */}
+      <HeadToHeadBoard rows={buildH2HRows(series, players)} />
 
       {/* Series board — the centrepiece */}
       {series.length > 0 && (
@@ -125,6 +135,87 @@ export function SingleTournamentPanel({
       {/* Partnerships (doubles only) */}
       {doubles && pairings.length > 0 && <PairingsTable pairings={pairings} />}
     </div>
+  )
+}
+
+type PlayerMap = Map<number, { label: string; color: string }>
+
+/**
+ * Group the tournament's series into the three head-to-head matchups OG's four
+ * owners form (they pair up two-a-side three different ways). Each row's headline
+ * score is TOURNAMENTS won — completed best-of-5 series, e.g. 1–0 — while the
+ * underlying game tally (e.g. 3–1) and its game-by-game detail ride along for the
+ * info modal. Returns plain, serializable data for the client <HeadToHeadBoard>.
+ */
+function buildH2HRows(series: Series[], players: PlayerMap): H2HRow[] {
+  const ids = [...players.keys()]
+  if (ids.length !== 4) return []
+  const [a, b, c, d] = ids
+  const partitions: [number[], number[]][] = [
+    [[a, b], [c, d]],
+    [[a, c], [b, d]],
+    [[a, d], [b, c]],
+  ]
+  const sk = (x: number[]) => [...x].sort((m, n) => m - n).join(',')
+  const mk = (x: number[], y: number[]) => [sk(x), sk(y)].sort().join('|')
+  const name = (x: number[]) => x.map((id) => players.get(id)?.label ?? '—').join(' & ')
+
+  const byMatch = new Map<string, Series[]>()
+  for (const s of series) {
+    const key = mk(s.aIds, s.bIds)
+    const arr = byMatch.get(key) ?? []
+    arr.push(s)
+    byMatch.set(key, arr)
+  }
+
+  const rows = partitions.map(([left, right]): H2HRow => {
+    const list = byMatch.get(mk(left, right)) ?? []
+    let leftSeries = 0
+    let rightSeries = 0
+    let anyLive = false
+
+    const seriesList: H2HSeriesDetail[] = list.map((s) => {
+      const aIsLeft = sk(s.aIds) === sk(left)
+      // Re-orient a series' A/B onto this row's left/right duos.
+      const orient = (w: 'a' | 'b' | null): 'left' | 'right' | null =>
+        w === null ? null : (w === 'a') === aIsLeft ? 'left' : 'right'
+      const lw = aIsLeft ? s.winsA : s.winsB
+      const rw = aIsLeft ? s.winsB : s.winsA
+      const winner = orient(s.winner)
+      if (winner === 'left') leftSeries++
+      else if (winner === 'right') rightSeries++
+      if (s.live) anyLive = true
+      const games: H2HGame[] = s.games.map((g) => ({
+        a: aIsLeft ? g.scoreA : g.scoreB,
+        b: aIsLeft ? g.scoreB : g.scoreA,
+        winner: orient(g.winner),
+        walkover: g.walkover,
+      }))
+      return { leftWins: lw, rightWins: rw, winner, live: s.live, games }
+    })
+
+    // Head-to-head is the rivalry result: whoever won more series takes the
+    // matchup 1–0. The series tally itself (e.g. 3–1) is the modal detail.
+    const decided = leftSeries + rightSeries > 0
+    const winner: 'left' | 'right' | null =
+      leftSeries > rightSeries ? 'left' : rightSeries > leftSeries ? 'right' : null
+    return {
+      leftName: name(left),
+      rightName: name(right),
+      leftScore: winner === 'left' ? 1 : 0,
+      rightScore: winner === 'right' ? 1 : 0,
+      leftSeries,
+      rightSeries,
+      decided,
+      live: !decided && anyLive,
+      winner,
+      seriesList,
+    }
+  })
+
+  // Decided matchups first, then live, then pending — keeps the played one on top.
+  return rows.sort(
+    (x, y) => Number(y.decided) - Number(x.decided) || Number(y.live) - Number(x.live),
   )
 }
 
