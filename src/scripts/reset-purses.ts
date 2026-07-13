@@ -10,7 +10,7 @@ import config from '../payload.config'
  */
 const PURSES: Record<string, number> = {
   aj: 20,
-  bava: 10,
+  staines: 10,
 }
 
 const run = async () => {

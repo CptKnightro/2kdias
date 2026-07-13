@@ -9,10 +9,10 @@ import config from '../payload.config'
  */
 const OWNERS: Record<string, string> = {
   lakers: 'Lash',
-  nets: 'Bava',
+  nets: 'Staines',
   raptors: 'Mandy',
   heat: 'AJ',
-  thunders: 'OM', // OKC
+  thunders: 'Omar', // OKC
 }
 
 const run = async () => {
