@@ -4,6 +4,13 @@ import { randomUUID } from 'crypto'
 import { revalidatePath } from 'next/cache'
 import { getPayloadClient } from '@/lib/payload'
 import { requireCommissioner } from '@/lib/auth'
+import {
+  readTriple,
+  ttWinner,
+  ttLoser,
+  type TTSlot,
+  type TTMatch,
+} from '@/lib/triple-threat'
 
 export type Result = { ok: boolean; error?: string }
 
@@ -127,6 +134,186 @@ export async function deleteTournamentGame(tournamentId: number, gameId: string)
       data: { bracket: { games } },
     })
     purge(tournamentId)
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+/* ── Triple Threat ─────────────────────────────────────────────────────────
+ * A 3-player, 3-game gauntlet held over the tournament's `bracket` JSON (no
+ * extra schema). The whole state is a `kind: 'triple-threat'` bracket:
+ *   Game 1 (semi)  — two of the three play; winner waits in the final.
+ *   Game 2 (elim)  — the semi loser plays the third (benched) player.
+ *   Game 3 (final) — semi winner vs elim winner; the winner is champion.
+ * When the final is logged the champion is stamped on the tournament and the
+ * linked trophy (a `final` ring — one reigning holder).
+ * -------------------------------------------------------------------------- */
+
+/** Revalidate everything a decided Triple Threat can touch. */
+function purgeTriple(id: number | string) {
+  for (const p of [`/tournaments/${id}`, '/tournaments', '/trophies', '/']) {
+    try {
+      revalidatePath(p)
+    } catch {
+      /* outside request scope — ignore */
+    }
+  }
+}
+
+const seasonLabel = (iso: string | null): string => {
+  const d = iso ? new Date(iso) : new Date()
+  return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+}
+
+/**
+ * Log the next Triple Threat game — open to anyone (public log, overrideAccess).
+ * The engine enforces the gauntlet: the opening game takes two picked players,
+ * every later game's pairing is derived from prior results. Logging the final
+ * crowns the champion and awards the linked ring.
+ */
+export async function logTripleThreatMatch(input: {
+  tournamentId: number | string
+  /** Opening game only — the two players who tip off (the third is benched). */
+  homeId?: string | number
+  awayId?: string | number
+  homeScore?: string | number
+  awayScore?: string | number
+  homeTeam?: string
+  awayTeam?: string
+  walkover?: boolean
+}): Promise<Result & { champion?: number | null; slot?: TTSlot }> {
+  try {
+    const tid = Number(input.tournamentId)
+    if (!Number.isFinite(tid)) return { ok: false, error: 'Unknown tournament' }
+
+    const payload = await getPayloadClient()
+    const t = await payload.findByID({ collection: 'tournaments', id: tid, depth: 0 })
+    const tb = readTriple(t.bracket)
+    if (!tb) return { ok: false, error: 'Not a Triple Threat tournament' }
+    if (tb.matches.length >= 3)
+      return { ok: false, error: 'This Triple Threat is already decided — undo the final to replay.' }
+
+    const homeScore = int(input.homeScore)
+    const awayScore = int(input.awayScore)
+    if (homeScore == null || awayScore == null) return { ok: false, error: 'Enter both scores' }
+    if (homeScore < 0 || awayScore < 0) return { ok: false, error: 'Scores cannot be negative' }
+    if (homeScore === awayScore)
+      return { ok: false, error: 'A Triple Threat game needs a winner — no ties' }
+
+    const stage = tb.matches.length // 0 semi · 1 elim · 2 final
+    let home: number
+    let away: number
+    if (stage === 0) {
+      home = Number(input.homeId)
+      away = Number(input.awayId)
+      if (!tb.players.includes(home) || !tb.players.includes(away) || home === away)
+        return { ok: false, error: 'Pick the two players for the opening game' }
+    } else if (stage === 1) {
+      const semi = tb.matches[0]
+      home = ttLoser(semi)
+      away = tb.players.find((p) => p !== semi.home && p !== semi.away)!
+    } else {
+      home = ttWinner(tb.matches[0]) // semi winner
+      away = ttWinner(tb.matches[1]) // elim winner
+    }
+
+    const slot: TTSlot = stage === 0 ? 'semi' : stage === 1 ? 'elim' : 'final'
+    const playedAt = new Date().toISOString()
+    const match: TTMatch = {
+      slot,
+      home,
+      away,
+      homeScore,
+      awayScore,
+      homeTeam: input.homeTeam?.trim() || null,
+      awayTeam: input.awayTeam?.trim() || null,
+      walkover: !!input.walkover,
+      playedAt,
+    }
+    const matches = [...tb.matches, match]
+
+    const champion = slot === 'final' ? ttWinner(match) : tb.champion
+    const completedAt = slot === 'final' ? playedAt : tb.completedAt
+
+    await payload.update({
+      collection: 'tournaments',
+      id: tid,
+      overrideAccess: true, // public game log — not tied to a signed-in user
+      data: {
+        bracket: { ...tb, matches, champion, completedAt },
+        ...(slot === 'final'
+          ? { champion, status: 'completed' as const }
+          : { status: 'in-progress' as const }),
+      },
+    })
+
+    // Crown the ring — a `final` trophy keeps only the latest holder (the
+    // reigning champion), so we just append and let the collection hook trim.
+    if (slot === 'final' && tb.trophyId && champion) {
+      const tr = await payload.findByID({ collection: 'trophies', id: tb.trophyId, depth: 0 })
+      const winners = Array.isArray(tr.winners) ? tr.winners : []
+      winners.push({
+        winnerType: 'team',
+        franchise: champion,
+        season: seasonLabel(playedAt),
+        awardedAt: playedAt,
+      } as (typeof winners)[number])
+      await payload.update({
+        collection: 'trophies',
+        id: tb.trophyId,
+        overrideAccess: true,
+        data: { winners },
+      })
+    }
+
+    purgeTriple(tid)
+    return { ok: true, champion: champion ?? null, slot }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+/** Undo the last Triple Threat game. Commissioner-only — enforced server-side. */
+export async function undoTripleThreatMatch(tournamentId: number | string): Promise<Result> {
+  try {
+    await requireCommissioner()
+    const tid = Number(tournamentId)
+    const payload = await getPayloadClient()
+    const t = await payload.findByID({ collection: 'tournaments', id: tid, depth: 0 })
+    const tb = readTriple(t.bracket)
+    if (!tb) return { ok: false, error: 'Not a Triple Threat tournament' }
+    if (tb.matches.length === 0) return { ok: false, error: 'Nothing to undo' }
+
+    const removed = tb.matches[tb.matches.length - 1]
+    const matches = tb.matches.slice(0, -1)
+    const undoneFinal = removed.slot === 'final'
+    const champion = undoneFinal ? null : tb.champion
+    const completedAt = undoneFinal ? null : tb.completedAt
+
+    await payload.update({
+      collection: 'tournaments',
+      id: tid,
+      data: {
+        bracket: { ...tb, matches, champion, completedAt },
+        champion,
+        status: 'in-progress' as const,
+      },
+    })
+
+    // Undoing the final strips the ring we just awarded (drop the latest holder).
+    if (undoneFinal && tb.trophyId) {
+      const tr = await payload.findByID({ collection: 'trophies', id: tb.trophyId, depth: 0 })
+      const winners = Array.isArray(tr.winners) ? tr.winners.slice(0, -1) : []
+      await payload.update({
+        collection: 'trophies',
+        id: tb.trophyId,
+        overrideAccess: true,
+        data: { winners },
+      })
+    }
+
+    purgeTriple(tid)
     return { ok: true }
   } catch (e) {
     return { ok: false, error: (e as Error).message }

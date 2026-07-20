@@ -5,6 +5,8 @@ import { PageHeader } from '@/components/ui-bits'
 import { DbErrorToast } from '@/components/db-error-toast'
 import { PageSkeleton } from '@/components/skeletons'
 import { TournamentDetail, type DetailParticipant, type DetailGame } from './tournament-detail'
+import { TripleThreatBoard, type TTPlayerView, type TTMatchView } from './triple-threat'
+import { readTriple } from '@/lib/triple-threat'
 
 export const dynamic = 'force-dynamic' // never cache a transient DB blip (would be served for the whole revalidate window)
 
@@ -73,6 +75,43 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
       owner: p.ownerName || p.name || '—',
       color: p.color || PRIMARY,
     }))
+
+  // Triple Threat tournaments own a bespoke 3-game gauntlet board.
+  const triple = readTriple(t.bracket)
+  if (triple) {
+    const byId = new Map(participants.map((p) => [p.id, p]))
+    const players: TTPlayerView[] = triple.players
+      .map((pid) => byId.get(String(pid)))
+      .filter((p): p is DetailParticipant => !!p)
+      .map((p) => ({ id: p.id, owner: p.owner, color: p.color }))
+    const matches: TTMatchView[] = triple.matches.map((m) => ({
+      slot: m.slot,
+      home: String(m.home),
+      away: String(m.away),
+      homeScore: m.homeScore,
+      awayScore: m.awayScore,
+      homeTeam: m.homeTeam,
+      awayTeam: m.awayTeam,
+      walkover: m.walkover,
+    }))
+    const championId = triple.champion != null ? String(triple.champion) : null
+
+    return (
+      <div>
+        <PageHeader
+          title={t.name}
+          icon={Trophy}
+          subtitle="Triple Threat · 3-player gauntlet · one ring"
+        />
+        <TripleThreatBoard
+          tournamentId={t.id as number}
+          players={players}
+          matches={matches}
+          championId={championId}
+        />
+      </div>
+    )
+  }
 
   const games = readGames(t.bracket)
 

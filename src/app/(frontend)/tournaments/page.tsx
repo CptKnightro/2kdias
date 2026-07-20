@@ -21,6 +21,9 @@ import {
   bracketToSideGames,
   matchToSideGame,
   isDoublesTournament,
+} from '@/lib/tournament-stats'
+import { isTripleThreat } from '@/lib/triple-threat'
+import {
   type SideGame,
   type Series,
   type PairStat,
@@ -109,7 +112,11 @@ export default async function TournamentsPage() {
       }))
 
       // Per-tournament drill-down (OG: series + player + partnership breakdown).
-      const tournaments: TournamentPanel[] = tourneys.docs.map((t) => {
+      // Triple Threats carry a bespoke bracket (not a flat game list) — they get
+      // their own board on the detail page, so skip them here.
+      const tournaments: TournamentPanel[] = tourneys.docs
+        .filter((t) => !isTripleThreat(t.bracket))
+        .map((t) => {
         const games = bracketToSideGames(t.bracket)
         return {
           id: String(t.id),
