@@ -98,9 +98,11 @@ const run = async () => {
         collection: 'tournaments',
         id: existing.id,
         overrideAccess: true,
-        data: { participants: playerIds, bracket },
+        // Recurring — a Triple Threat is never "completed"; crowning a champion
+        // just opens the next edition, so it stays in-progress.
+        data: { participants: playerIds, bracket, status: 'in-progress' },
       })
-      console.log(`• tournament "${name}" exists (#${existing.id}) — shape/link ensured (${played} games kept)`)
+      console.log(`• tournament "${name}" exists (#${existing.id}) — shape/link/status ensured (${played} games kept)`)
     }
   }
 
