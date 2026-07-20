@@ -11,8 +11,9 @@ import {
   ArrowUUpLeft,
   CircleNotch,
   Confetti,
+  ClockCounterClockwise,
 } from '@phosphor-icons/react'
-import { GlassPanel } from '@/components/ui-bits'
+import { GlassPanel, EmptyState } from '@/components/ui-bits'
 import { TeamLogo } from '@/components/team-logo'
 import { Field, NumberInput, TextInput, SubmitButton, MiniButton } from '@/components/commissioner/fields'
 import { logTripleThreatMatch, undoTripleThreatMatch } from '../actions'
@@ -30,6 +31,13 @@ export type TTMatchView = {
   awayTeam: string | null
   walkover: boolean
 }
+/** A decided edition — for the champion history. */
+export type TTEditionView = {
+  edition: number
+  championId: string
+  completedAt: string | null
+  matches: TTMatchView[]
+}
 
 const SLOT_LABEL: Record<TTMatchView['slot'], string> = {
   semi: 'Opening Game',
@@ -46,18 +54,23 @@ const winnerId = (m: TTMatchView): string =>
   (m.homeScore ?? 0) > (m.awayScore ?? 0) ? m.home : m.away
 const loserId = (m: TTMatchView): string => (winnerId(m) === m.home ? m.away : m.home)
 
+const fmtDate = (iso: string | null): string =>
+  iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''
+
 /* ── entry ────────────────────────────────────────────────────────────────── */
 
 export function TripleThreatBoard({
   tournamentId,
   players,
   matches,
-  championId,
+  history,
 }: {
   tournamentId: number
   players: TTPlayerView[]
+  /** Games in the LIVE edition (0–2 — a completed edition rolls into history). */
   matches: TTMatchView[]
-  championId: string | null
+  /** Decided editions, most recent first. */
+  history: TTEditionView[]
 }) {
   const [canManage, setCanManage] = React.useState(false)
   React.useEffect(() => {
@@ -69,29 +82,53 @@ export function TripleThreatBoard({
   }, [])
 
   const byId = React.useMemo(() => new Map(players.map((p) => [p.id, p])), [players])
-  const get = (id: string): TTPlayerView =>
-    byId.get(id) ?? { id, owner: '—', color: '#DF2604' }
+  const get = (id: string): TTPlayerView => byId.get(id) ?? { id, owner: '—', color: '#DF2604' }
 
   const semi = matches[0]
   const elim = matches[1]
-  const final = matches[2]
-  const stage = matches.length // 0 → opening · 1 → elimination · 2 → final · 3 → done
-  const champion = championId ? get(championId) : null
+  const stage = matches.length // 0 → opening · 1 → elimination · 2 → final
 
-  // Pairings for games not yet played (derived from prior results).
-  const benched = semi
-    ? players.find((p) => p.id !== semi.home && p.id !== semi.away) ?? null
-    : null
+  const reigning = history[0] ?? null
+  const editionNumber = history.length + 1
+
+  // Titles tally (rings won per owner across all editions).
+  const titles = React.useMemo(() => {
+    const tally = new Map<string, number>()
+    for (const e of history) tally.set(e.championId, (tally.get(e.championId) ?? 0) + 1)
+    return [...tally.entries()]
+      .map(([id, count]) => ({ player: get(id), count }))
+      .sort((a, b) => b.count - a.count || a.player.owner.localeCompare(b.player.owner))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [history])
+
+  // Pairings for live-edition games not yet played.
+  const benched = semi ? players.find((p) => p.id !== semi.home && p.id !== semi.away) ?? null : null
   const elimNext = semi && benched ? { home: loserId(semi), away: benched.id } : null
   const finalNext = semi && elim ? { home: winnerId(semi), away: winnerId(elim) } : null
 
   return (
     <div className="space-y-6">
-      {champion && <ChampionBanner player={champion} />}
+      {reigning && <ReigningBanner player={get(reigning.championId)} edition={reigning.edition} />}
 
-      {/* ── Logger for the current stage ─────────────────────────── */}
-      {stage < 3 &&
-        (stage === 0 ? (
+      {titles.length > 0 && <TitlesStrip titles={titles} />}
+
+      {/* ── Live edition ─────────────────────────────────────────── */}
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="font-display text-xl font-black uppercase tracking-tight">
+            Edition {editionNumber}
+          </h2>
+          <span className="skeuo-inset rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+            Live
+          </span>
+          {stage === 0 && history.length > 0 && (
+            <span className="text-xs text-muted-foreground">
+              New Triple Threat — log the opening game to start it.
+            </span>
+          )}
+        </div>
+
+        {stage === 0 ? (
           <OpeningLogger tournamentId={tournamentId} players={players} />
         ) : (
           <FixedLogger
@@ -100,11 +137,8 @@ export function TripleThreatBoard({
             home={get((stage === 1 ? elimNext! : finalNext!).home)}
             away={get((stage === 1 ? elimNext! : finalNext!).away)}
           />
-        ))}
+        )}
 
-      {/* ── Bracket ──────────────────────────────────────────────── */}
-      <section className="space-y-3">
-        <h2 className="font-display text-xl font-black uppercase tracking-tight">Bracket</h2>
         <div className="space-y-2.5">
           <GameCard
             slot="semi"
@@ -112,6 +146,7 @@ export function TripleThreatBoard({
             m={semi}
             pair={semi ? { home: semi.home, away: semi.away } : null}
             get={get}
+            waitingLabel="Pick the two opening players above"
           />
           <GameCard
             slot="elim"
@@ -124,24 +159,27 @@ export function TripleThreatBoard({
           <GameCard
             slot="final"
             live={stage === 2}
-            m={final}
+            m={undefined}
             pair={finalNext}
             get={get}
             waitingLabel="Awaits both semi-final results"
           />
         </div>
+
+        {canManage && matches.length > 0 && (
+          <UndoButton tournamentId={tournamentId} lastSlot={matches[matches.length - 1].slot} />
+        )}
       </section>
 
-      {canManage && matches.length > 0 && (
-        <UndoButton tournamentId={tournamentId} lastSlot={matches[matches.length - 1].slot} />
-      )}
+      {/* ── Past champions ───────────────────────────────────────── */}
+      {history.length > 0 && <HistoryList history={history} get={get} />}
     </div>
   )
 }
 
-/* ── champion banner ──────────────────────────────────────────────────────── */
+/* ── reigning champion banner ─────────────────────────────────────────────── */
 
-function ChampionBanner({ player }: { player: TTPlayerView }) {
+function ReigningBanner({ player, edition }: { player: TTPlayerView; edition: number }) {
   return (
     <GlassPanel strong className="foil relative overflow-hidden p-6 text-center sm:p-8">
       <Confetti
@@ -154,7 +192,7 @@ function ChampionBanner({ player }: { player: TTPlayerView }) {
       />
       <div className="relative">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-warning/15 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-warning">
-          <Trophy weight="fill" size={12} /> Triple Threat Champion
+          <Trophy weight="fill" size={12} /> Reigning Champion · Edition {edition}
         </span>
         <div className="mt-4 flex items-center justify-center gap-3">
           <span
@@ -168,10 +206,35 @@ function ChampionBanner({ player }: { player: TTPlayerView }) {
           </h3>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
-          Three games, one ring — {player.owner} runs the table.
+          Holds the ring until the next Triple Threat is decided.
         </p>
       </div>
     </GlassPanel>
+  )
+}
+
+/* ── titles tally ─────────────────────────────────────────────────────────── */
+
+function TitlesStrip({ titles }: { titles: { player: TTPlayerView; count: number }[] }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        Rings won
+      </span>
+      {titles.map(({ player, count }) => (
+        <span
+          key={player.id}
+          className="inline-flex items-center gap-1.5 rounded-full skeuo-inset px-2.5 py-1 text-xs font-semibold"
+        >
+          <span className="size-2 rounded-full" style={{ background: player.color }} />
+          {player.owner}
+          <span className="inline-flex items-center gap-0.5 text-warning">
+            <Trophy weight="fill" size={10} />
+            {count}
+          </span>
+        </span>
+      ))}
+    </div>
   )
 }
 
@@ -221,7 +284,6 @@ function GameCard({
           <BracketSide
             player={get(pair.home)}
             team={m?.homeTeam ?? null}
-            score={m?.homeScore ?? null}
             won={played && win === pair.home}
             dim={played && win !== pair.home}
             align="right"
@@ -240,7 +302,6 @@ function GameCard({
           <BracketSide
             player={get(pair.away)}
             team={m?.awayTeam ?? null}
-            score={m?.awayScore ?? null}
             won={played && win === pair.away}
             dim={played && win !== pair.away}
             align="left"
@@ -264,14 +325,12 @@ function GameCard({
 function BracketSide({
   player,
   team,
-  score: _score,
   won,
   dim,
   align,
 }: {
   player: TTPlayerView
   team: string | null
-  score: number | null
   won: boolean
   dim: boolean
   align: 'left' | 'right'
@@ -308,6 +367,68 @@ function BracketSide({
         </span>
       )}
     </div>
+  )
+}
+
+/* ── past champions history ───────────────────────────────────────────────── */
+
+function HistoryList({
+  history,
+  get,
+}: {
+  history: TTEditionView[]
+  get: (id: string) => TTPlayerView
+}) {
+  return (
+    <section className="space-y-3">
+      <h2 className="flex items-center gap-2 font-display text-xl font-black uppercase tracking-tight">
+        <ClockCounterClockwise weight="bold" size={20} className="text-muted-foreground" />
+        Past Champions <span className="text-muted-foreground">({history.length})</span>
+      </h2>
+      <div className="space-y-2">
+        {history.map((e) => {
+          const champ = get(e.championId)
+          return (
+            <GlassPanel key={e.edition} className="flex flex-wrap items-center gap-x-4 gap-y-2 p-4">
+              <span className="skeuo-inset rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                Edition {e.edition}
+              </span>
+              <span className="flex items-center gap-1.5 font-bold">
+                <span className="size-2.5 rounded-full" style={{ background: champ.color }} />
+                {champ.owner}
+                <Crown weight="fill" size={13} className="text-warning" />
+              </span>
+              <div className="ml-auto flex flex-wrap gap-1.5">
+                {e.matches.map((m, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-1 rounded-md skeuo-inset px-2 py-1 text-xs font-semibold tabular-nums"
+                    title={SLOT_LABEL[m.slot]}
+                  >
+                    <span className="text-[9px] font-bold uppercase text-muted-foreground">
+                      {m.slot === 'semi' ? 'SF' : m.slot === 'elim' ? 'EL' : 'F'}
+                    </span>
+                    <span className={winnerId(m) === m.home ? 'text-foreground' : 'text-muted-foreground'}>
+                      {m.homeScore}
+                    </span>
+                    <span className="text-muted-foreground">–</span>
+                    <span className={winnerId(m) === m.away ? 'text-foreground' : 'text-muted-foreground'}>
+                      {m.awayScore}
+                    </span>
+                    {m.walkover && <FlagBanner weight="fill" size={9} className="text-warning" />}
+                  </span>
+                ))}
+              </div>
+              {e.completedAt && (
+                <span className="w-full text-[11px] text-muted-foreground sm:w-auto">
+                  {fmtDate(e.completedAt)}
+                </span>
+              )}
+            </GlassPanel>
+          )
+        })}
+      </div>
+    </section>
   )
 }
 
@@ -505,7 +626,7 @@ function FixedLogger({
         walkover,
       })
       if (res.ok) {
-        toast.success(res.slot === 'final' ? '🏆 Champion crowned!' : 'Elimination game logged')
+        toast.success(res.slot === 'final' ? '🏆 Champion crowned — next edition open!' : 'Elimination game logged')
         reset()
         router.refresh()
       } else {
@@ -643,7 +764,7 @@ function UndoButton({
     })
   }
   return (
-    <div className="flex justify-center">
+    <div className="flex justify-center pt-1">
       <button
         type="button"
         onClick={undo}

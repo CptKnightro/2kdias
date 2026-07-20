@@ -14,7 +14,7 @@
 import 'dotenv/config'
 import { getPayload } from 'payload'
 import config from '../payload.config'
-import { TRIPLE_THREAT_KIND } from '../lib/triple-threat'
+import { emptyTripleBracket, readTriple } from '../lib/triple-threat'
 
 // Suffix letters → owner display name.
 const LETTER: Record<string, string> = { A: 'AJ', M: 'Mandy', S: 'Staines', O: 'Omar' }
@@ -70,16 +70,9 @@ const run = async () => {
       console.log(`• trophy "${name}" already exists (#${trophy.id})`)
     }
 
-    /* ── tournament (triple-threat bracket) ──────────────────────── */
+    /* ── tournament (recurring triple-threat bracket) ────────────── */
     const existing = tourneyByName.get(key)
-    const freshBracket = {
-      kind: TRIPLE_THREAT_KIND,
-      players: playerIds,
-      trophyId: trophy.id as number,
-      matches: [],
-      champion: null,
-      completedAt: null,
-    }
+    const freshBracket = emptyTripleBracket(playerIds, trophy.id as number)
 
     if (!existing) {
       const to = await payload.create({
@@ -91,25 +84,23 @@ const run = async () => {
           status: 'in-progress',
           season: 'Triple Threat',
           participants: playerIds,
-          description: `${lineup}. Three players, three games: the opening winner waits in the final while the loser plays the benched third — the two winners meet for the ring.`,
+          description: `${lineup}. Recurring — each edition is three games: the opening winner waits in the final while the loser plays the benched third, then the two winners meet for the ring. Crown a champion and the next edition opens automatically.`,
           bracket: freshBracket,
         },
       })
       console.log(`✓ tournament #${to.id}  "${name}"  players=[${playerIds.join(',')}]  trophy=#${trophy.id}`)
     } else {
-      // Preserve any games already logged; only ensure the link fields are set.
-      const cur = (existing.bracket ?? {}) as Record<string, unknown>
-      const isTriple = cur.kind === TRIPLE_THREAT_KIND
-      const bracket = isTriple
-        ? { ...cur, players: playerIds, trophyId: trophy.id as number }
-        : freshBracket
+      // Preserve any editions/games already logged; ensure the link fields are set.
+      const tb = readTriple(existing.bracket)
+      const played = tb ? tb.editions.reduce((n, e) => n + e.matches.length, 0) : 0
+      const bracket = played > 0 && tb ? { ...freshBracket, editions: tb.editions } : freshBracket
       await payload.update({
         collection: 'tournaments',
         id: existing.id,
         overrideAccess: true,
         data: { participants: playerIds, bracket },
       })
-      console.log(`• tournament "${name}" already exists (#${existing.id}) — link fields ensured`)
+      console.log(`• tournament "${name}" exists (#${existing.id}) — shape/link ensured (${played} games kept)`)
     }
   }
 

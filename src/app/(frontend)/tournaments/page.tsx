@@ -21,6 +21,8 @@ import {
   bracketToSideGames,
   matchToSideGame,
   isDoublesTournament,
+  tripleToSideGames,
+  tripleChampionIds,
 } from '@/lib/tournament-stats'
 import { isTripleThreat } from '@/lib/triple-threat'
 import {
@@ -50,11 +52,16 @@ type TournamentPanel = {
   id: string
   name: string
   status: string
+  /** Triple Threats render a standings/titles dashboard; others the OG series panel. */
+  triple: boolean
   doubles: boolean
   gameCount: number
   stats: TeamStat[]
   series: Series[]
   pairings: PairStat[]
+  titles: TitleRow[]
+  shame: ShameRow[]
+  editions: number
 }
 
 type TournamentsData = {
@@ -92,10 +99,17 @@ export default async function TournamentsPage() {
         color: f.color ?? null,
       }))
 
-      const tourneyGames: SideGame[] = tourneys.docs.flatMap((t) => bracketToSideGames(t.bracket))
-      const championIds = tourneys.docs
-        .map((t) => (typeof t.champion === 'object' ? t.champion?.id : t.champion))
-        .filter((x): x is number => typeof x === 'number')
+      // Tournament games = OG bracket games + every Triple Threat edition game.
+      const tourneyGames: SideGame[] = tourneys.docs.flatMap((t) => [
+        ...bracketToSideGames(t.bracket),
+        ...tripleToSideGames(t.bracket),
+      ])
+      // Titles = each OG champion + every decided Triple Threat edition champion.
+      const championIds: number[] = tourneys.docs.flatMap((t) => {
+        if (isTripleThreat(t.bracket)) return tripleChampionIds(t.bracket)
+        const c = typeof t.champion === 'object' ? t.champion?.id : t.champion
+        return typeof c === 'number' ? [c] : []
+      })
       const leagueGames: SideGame[] = matchRes.docs
         .map((m) => matchToSideGame(m))
         .filter((g): g is SideGame => g !== null)
@@ -111,22 +125,41 @@ export default async function TournamentsPage() {
         champion: typeof t.champion === 'object' ? (t.champion?.name ?? null) : null,
       }))
 
-      // Per-tournament drill-down (OG: series + player + partnership breakdown).
-      // Triple Threats carry a bespoke bracket (not a flat game list) — they get
-      // their own board on the detail page, so skip them here.
-      const tournaments: TournamentPanel[] = tourneys.docs
-        .filter((t) => !isTripleThreat(t.bracket))
-        .map((t) => {
+      // Per-tournament drill-down. Triple Threats show a standings + titles
+      // dashboard (their games are 1v1); OG shows the rotating-2v2 series panel.
+      const tournaments: TournamentPanel[] = tourneys.docs.map((t) => {
+        if (isTripleThreat(t.bracket)) {
+          const games = tripleToSideGames(t.bracket)
+          const champs = tripleChampionIds(t.bracket)
+          return {
+            id: String(t.id),
+            name: t.name,
+            status: t.status ?? 'in-progress',
+            triple: true,
+            doubles: false,
+            gameCount: games.length,
+            stats: buildTournamentStats(franchises, games),
+            series: [],
+            pairings: [],
+            titles: buildTitles(franchises, champs),
+            shame: buildWalkOfShame(franchises, games),
+            editions: champs.length,
+          }
+        }
         const games = bracketToSideGames(t.bracket)
         return {
           id: String(t.id),
           name: t.name,
           status: t.status ?? 'upcoming',
+          triple: false,
           doubles: isDoublesTournament(games),
           gameCount: games.length,
           stats: buildTournamentStats(franchises, games),
           series: buildSeries(franchises, games, BEST_OF),
           pairings: buildPairings(franchises, games),
+          titles: [],
+          shame: [],
+          editions: 0,
         }
       })
 
@@ -170,11 +203,27 @@ export default async function TournamentsPage() {
         />
       ),
     },
-    ...tournaments.map(
-      (t): AnalyticsPanel => ({
+    ...tournaments.map((t): AnalyticsPanel => {
+      const games = `${t.gameCount} game${t.gameCount === 1 ? '' : 's'}`
+      if (t.triple) {
+        return {
+          id: t.id,
+          label: t.name,
+          caption: `${cap(t.status)} · Triple Threat · ${t.editions} edition${t.editions === 1 ? '' : 's'} · ${games}`,
+          node: (
+            <TournamentDashboard
+              stats={t.stats}
+              titles={t.titles}
+              shame={t.shame}
+              gameCount={t.gameCount}
+            />
+          ),
+        }
+      }
+      return {
         id: t.id,
         label: t.name,
-        caption: `${cap(t.status)} · ${t.doubles ? 'Rotating 2v2' : '1v1'} · Best of ${BEST_OF} · ${t.gameCount} game${t.gameCount === 1 ? '' : 's'}`,
+        caption: `${cap(t.status)} · ${t.doubles ? 'Rotating 2v2' : '1v1'} · Best of ${BEST_OF} · ${games}`,
         node: (
           <SingleTournamentPanel
             stats={t.stats}
@@ -185,8 +234,8 @@ export default async function TournamentsPage() {
             doubles={t.doubles}
           />
         ),
-      }),
-    ),
+      }
+    }),
   ]
 
   return (

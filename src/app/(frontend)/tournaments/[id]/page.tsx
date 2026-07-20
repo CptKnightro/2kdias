@@ -5,8 +5,13 @@ import { PageHeader } from '@/components/ui-bits'
 import { DbErrorToast } from '@/components/db-error-toast'
 import { PageSkeleton } from '@/components/skeletons'
 import { TournamentDetail, type DetailParticipant, type DetailGame } from './tournament-detail'
-import { TripleThreatBoard, type TTPlayerView, type TTMatchView } from './triple-threat'
-import { readTriple } from '@/lib/triple-threat'
+import {
+  TripleThreatBoard,
+  type TTPlayerView,
+  type TTMatchView,
+  type TTEditionView,
+} from './triple-threat'
+import { readTriple, type TTMatch } from '@/lib/triple-threat'
 
 export const dynamic = 'force-dynamic' // never cache a transient DB blip (would be served for the whole revalidate window)
 
@@ -84,7 +89,8 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
       .map((pid) => byId.get(String(pid)))
       .filter((p): p is DetailParticipant => !!p)
       .map((p) => ({ id: p.id, owner: p.owner, color: p.color }))
-    const matches: TTMatchView[] = triple.matches.map((m) => ({
+
+    const view = (m: TTMatch): TTMatchView => ({
       slot: m.slot,
       home: String(m.home),
       away: String(m.away),
@@ -93,21 +99,33 @@ export default async function TournamentPage({ params }: { params: Promise<{ id:
       homeTeam: m.homeTeam,
       awayTeam: m.awayTeam,
       walkover: m.walkover,
-    }))
-    const championId = triple.champion != null ? String(triple.champion) : null
+    })
+
+    // The live edition is always the last one; earlier decided editions are history.
+    const live = triple.editions[triple.editions.length - 1]
+    const matches: TTMatchView[] = live.matches.map(view)
+    const history: TTEditionView[] = triple.editions
+      .filter((e) => e.champion != null)
+      .map((e, idx) => ({
+        edition: idx + 1,
+        championId: String(e.champion),
+        completedAt: e.completedAt,
+        matches: e.matches.map(view),
+      }))
+      .reverse() // most recent edition first
 
     return (
       <div>
         <PageHeader
           title={t.name}
           icon={Trophy}
-          subtitle="Triple Threat · 3-player gauntlet · one ring"
+          subtitle="Triple Threat · recurring 3-player gauntlet"
         />
         <TripleThreatBoard
           tournamentId={t.id as number}
           players={players}
           matches={matches}
-          championId={championId}
+          history={history}
         />
       </div>
     )

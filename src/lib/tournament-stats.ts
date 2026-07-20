@@ -1,4 +1,5 @@
 import { ownerLabel, PRIMARY, type FranchiseRow, type TeamStat } from '@/lib/home-stats'
+import { readTriple } from '@/lib/triple-threat'
 
 /**
  * Tournament + Walk-of-Shame aggregation. Tournament games live in each
@@ -54,6 +55,36 @@ export function bracketToSideGames(bracket: unknown): SideGame[] {
       walkover: !!g.walkover,
     }
   })
+}
+
+/**
+ * Flatten every game across all editions of a Triple Threat bracket into
+ * SideGames (each game is 1v1 — one franchise per side). Empty for non-TT.
+ */
+export function tripleToSideGames(bracket: unknown): SideGame[] {
+  const tb = readTriple(bracket)
+  if (!tb) return []
+  return tb.editions
+    .flatMap((e) => e.matches)
+    .map((m) => ({
+      a: [m.home],
+      b: [m.away],
+      scoreA: m.homeScore,
+      scoreB: m.awayScore,
+      walkover: m.walkover,
+    }))
+}
+
+/** Champion franchise id of every decided edition of a Triple Threat. */
+export function tripleChampionIds(bracket: unknown): number[] {
+  const tb = readTriple(bracket)
+  if (!tb) return []
+  return tb.editions.map((e) => e.champion).filter((x): x is number => x != null)
+}
+
+/** Any game logged, across all editions? (drives the "games" caption / gate.) */
+export function tripleGameCount(bracket: unknown): number {
+  return tripleToSideGames(bracket).length
 }
 
 /** Normalise a league match row into a SideGame (one franchise per side). */

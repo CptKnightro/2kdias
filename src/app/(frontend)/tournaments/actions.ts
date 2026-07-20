@@ -8,9 +8,14 @@ import {
   readTriple,
   ttWinner,
   ttLoser,
+  reigningEdition,
+  emptyEdition,
   type TTSlot,
   type TTMatch,
+  type TTEdition,
+  type TTBracket,
 } from '@/lib/triple-threat'
+import type { Trophy } from '@/payload-types'
 
 export type Result = { ok: boolean; error?: string }
 
@@ -141,14 +146,17 @@ export async function deleteTournamentGame(tournamentId: number, gameId: string)
 }
 
 /* ── Triple Threat ─────────────────────────────────────────────────────────
- * A 3-player, 3-game gauntlet held over the tournament's `bracket` JSON (no
- * extra schema). The whole state is a `kind: 'triple-threat'` bracket:
+ * A *recurring* 3-player, 3-game gauntlet held over the tournament's `bracket`
+ * JSON (no extra schema). Each edition:
  *   Game 1 (semi)  — two of the three play; winner waits in the final.
  *   Game 2 (elim)  — the semi loser plays the third (benched) player.
  *   Game 3 (final) — semi winner vs elim winner; the winner is champion.
- * When the final is logged the champion is stamped on the tournament and the
- * linked trophy (a `final` ring — one reigning holder).
+ * Logging the final banks the edition (champion recorded) and opens a fresh
+ * edition automatically, so the next Triple Threat can be logged straight away.
+ * The linked `final` trophy always mirrors the reigning (latest) champion.
  * -------------------------------------------------------------------------- */
+
+type PayloadClient = Awaited<ReturnType<typeof getPayloadClient>>
 
 /** Revalidate everything a decided Triple Threat can touch. */
 function purgeTriple(id: number | string) {
@@ -166,11 +174,54 @@ const seasonLabel = (iso: string | null): string => {
   return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
 }
 
+/** Point the linked `final` trophy at the reigning champion (or clear it). */
+async function syncTripleTrophy(
+  payload: PayloadClient,
+  trophyId: number | null,
+  reigning: TTEdition | null,
+) {
+  if (!trophyId) return
+  const winners: NonNullable<Trophy['winners']> =
+    reigning?.champion != null
+      ? [
+          {
+            winnerType: 'team',
+            franchise: reigning.champion,
+            season: seasonLabel(reigning.completedAt),
+            awardedAt: reigning.completedAt ?? new Date().toISOString(),
+          },
+        ]
+      : []
+  await payload.update({
+    collection: 'trophies',
+    id: trophyId,
+    overrideAccess: true,
+    data: { winners },
+  })
+}
+
+/** Persist the bracket + mirror the tournament champion / trophy to the reign. */
+async function saveTriple(payload: PayloadClient, tid: number, tb: TTBracket) {
+  const reigning = reigningEdition(tb)
+  await payload.update({
+    collection: 'tournaments',
+    id: tid,
+    overrideAccess: true, // public game log — not tied to a signed-in user
+    data: {
+      bracket: { kind: tb.kind, players: tb.players, trophyId: tb.trophyId, editions: tb.editions },
+      champion: reigning?.champion ?? null,
+      status: 'in-progress' as const,
+    },
+  })
+  await syncTripleTrophy(payload, tb.trophyId, reigning)
+  purgeTriple(tid)
+}
+
 /**
  * Log the next Triple Threat game — open to anyone (public log, overrideAccess).
  * The engine enforces the gauntlet: the opening game takes two picked players,
  * every later game's pairing is derived from prior results. Logging the final
- * crowns the champion and awards the linked ring.
+ * crowns the champion and opens the next edition automatically.
  */
 export async function logTripleThreatMatch(input: {
   tournamentId: number | string
@@ -191,8 +242,13 @@ export async function logTripleThreatMatch(input: {
     const t = await payload.findByID({ collection: 'tournaments', id: tid, depth: 0 })
     const tb = readTriple(t.bracket)
     if (!tb) return { ok: false, error: 'Not a Triple Threat tournament' }
-    if (tb.matches.length >= 3)
-      return { ok: false, error: 'This Triple Threat is already decided — undo the final to replay.' }
+
+    // The live edition is always the last one (readTriple guarantees it).
+    let cur = tb.editions[tb.editions.length - 1]
+    if (cur.matches.length >= 3) {
+      cur = emptyEdition()
+      tb.editions.push(cur)
+    }
 
     const homeScore = int(input.homeScore)
     const awayScore = int(input.awayScore)
@@ -201,7 +257,7 @@ export async function logTripleThreatMatch(input: {
     if (homeScore === awayScore)
       return { ok: false, error: 'A Triple Threat game needs a winner — no ties' }
 
-    const stage = tb.matches.length // 0 semi · 1 elim · 2 final
+    const stage = cur.matches.length // 0 semi · 1 elim · 2 final
     let home: number
     let away: number
     if (stage === 0) {
@@ -210,12 +266,12 @@ export async function logTripleThreatMatch(input: {
       if (!tb.players.includes(home) || !tb.players.includes(away) || home === away)
         return { ok: false, error: 'Pick the two players for the opening game' }
     } else if (stage === 1) {
-      const semi = tb.matches[0]
+      const semi = cur.matches[0]
       home = ttLoser(semi)
       away = tb.players.find((p) => p !== semi.home && p !== semi.away)!
     } else {
-      home = ttWinner(tb.matches[0]) // semi winner
-      away = ttWinner(tb.matches[1]) // elim winner
+      home = ttWinner(cur.matches[0]) // semi winner
+      away = ttWinner(cur.matches[1]) // elim winner
     }
 
     const slot: TTSlot = stage === 0 ? 'semi' : stage === 1 ? 'elim' : 'final'
@@ -231,44 +287,18 @@ export async function logTripleThreatMatch(input: {
       walkover: !!input.walkover,
       playedAt,
     }
-    const matches = [...tb.matches, match]
+    cur.matches.push(match)
 
-    const champion = slot === 'final' ? ttWinner(match) : tb.champion
-    const completedAt = slot === 'final' ? playedAt : tb.completedAt
-
-    await payload.update({
-      collection: 'tournaments',
-      id: tid,
-      overrideAccess: true, // public game log — not tied to a signed-in user
-      data: {
-        bracket: { ...tb, matches, champion, completedAt },
-        ...(slot === 'final'
-          ? { champion, status: 'completed' as const }
-          : { status: 'in-progress' as const }),
-      },
-    })
-
-    // Crown the ring — a `final` trophy keeps only the latest holder (the
-    // reigning champion), so we just append and let the collection hook trim.
-    if (slot === 'final' && tb.trophyId && champion) {
-      const tr = await payload.findByID({ collection: 'trophies', id: tb.trophyId, depth: 0 })
-      const winners = Array.isArray(tr.winners) ? tr.winners : []
-      winners.push({
-        winnerType: 'team',
-        franchise: champion,
-        season: seasonLabel(playedAt),
-        awardedAt: playedAt,
-      } as (typeof winners)[number])
-      await payload.update({
-        collection: 'trophies',
-        id: tb.trophyId,
-        overrideAccess: true,
-        data: { winners },
-      })
+    let champion: number | null = null
+    if (slot === 'final') {
+      champion = ttWinner(match)
+      cur.champion = champion
+      cur.completedAt = playedAt
+      tb.editions.push(emptyEdition()) // open the next edition straight away
     }
 
-    purgeTriple(tid)
-    return { ok: true, champion: champion ?? null, slot }
+    await saveTriple(payload, tid, tb)
+    return { ok: true, champion, slot }
   } catch (e) {
     return { ok: false, error: (e as Error).message }
   }
@@ -283,37 +313,21 @@ export async function undoTripleThreatMatch(tournamentId: number | string): Prom
     const t = await payload.findByID({ collection: 'tournaments', id: tid, depth: 0 })
     const tb = readTriple(t.bracket)
     if (!tb) return { ok: false, error: 'Not a Triple Threat tournament' }
-    if (tb.matches.length === 0) return { ok: false, error: 'Nothing to undo' }
 
-    const removed = tb.matches[tb.matches.length - 1]
-    const matches = tb.matches.slice(0, -1)
-    const undoneFinal = removed.slot === 'final'
-    const champion = undoneFinal ? null : tb.champion
-    const completedAt = undoneFinal ? null : tb.completedAt
+    // Find the most recent edition that actually has a game (skip the trailing
+    // empty live edition opened by the last crowning).
+    let i = tb.editions.length - 1
+    while (i >= 0 && tb.editions[i].matches.length === 0) i--
+    if (i < 0) return { ok: false, error: 'Nothing to undo' }
 
-    await payload.update({
-      collection: 'tournaments',
-      id: tid,
-      data: {
-        bracket: { ...tb, matches, champion, completedAt },
-        champion,
-        status: 'in-progress' as const,
-      },
-    })
+    // Drop any trailing empty editions, then pop the last game of edition i.
+    tb.editions = tb.editions.slice(0, i + 1)
+    const ed = tb.editions[i]
+    ed.champion = null // if this edition was decided, it no longer is
+    ed.completedAt = null
+    ed.matches.pop()
 
-    // Undoing the final strips the ring we just awarded (drop the latest holder).
-    if (undoneFinal && tb.trophyId) {
-      const tr = await payload.findByID({ collection: 'trophies', id: tb.trophyId, depth: 0 })
-      const winners = Array.isArray(tr.winners) ? tr.winners.slice(0, -1) : []
-      await payload.update({
-        collection: 'trophies',
-        id: tb.trophyId,
-        overrideAccess: true,
-        data: { winners },
-      })
-    }
-
-    purgeTriple(tid)
+    await saveTriple(payload, tid, tb)
     return { ok: true }
   } catch (e) {
     return { ok: false, error: (e as Error).message }
